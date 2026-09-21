@@ -194,6 +194,34 @@ function setBudgetCategorieMois(cat, montant, mois) {
   }
 }
 
+/* ---------- MIGRATION : ancien modèle "Salaire" dans la liste des revenus ----------
+   Avant la séparation salaire/autres revenus, l'onboarding créait une entrée
+   "Salaire" générique dans `revenus`. La garder telle quelle ferait compter
+   le salaire deux fois (une fois via `revenus`, une fois via le salaire
+   mensuel suivi séparément). Migration automatique, une seule fois. */
+function migrateSalaireModel() {
+  const params = getParams();
+  if (!params || params.migrated_salaire_v2) return;
+
+  const revenus = params.revenus || [];
+  const salaireIndex = revenus.findIndex((r) => (r.nom || '').trim().toLowerCase() === 'salaire');
+
+  if (salaireIndex !== -1) {
+    const salaireMontant = revenus[salaireIndex].montant;
+    params.revenus = revenus.filter((_, i) => i !== salaireIndex);
+    params.salaire_type = salaireMontant;
+
+    const mois = currentMonthKey();
+    const salaires = getSalairesMensuels();
+    if (salaires[mois] == null) saveSalaireMois(mois, salaireMontant);
+
+    if (getPourcentages()) savePourcentages(calculerPourcentagesDepuisBudget(salaireMontant));
+  }
+
+  params.migrated_salaire_v2 = true;
+  saveParams(params);
+}
+
 /* ---------- REVENU EFFECTIF DU MOIS (salaire variable + autres revenus fixes) ---------- */
 function getRevenuMensuelEffectif(mois) {
   return getSalaireEffectifMois(mois) + getTotalRevenus();

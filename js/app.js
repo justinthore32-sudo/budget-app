@@ -128,5 +128,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initOnboarding();
     return;
   }
+  migrateSalaireModel();
   boot();
 });
