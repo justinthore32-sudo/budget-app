@@ -183,6 +183,12 @@
 .pourcentage-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
 .pourcentage-row:last-child { border-bottom: none; }
 
+.previsionnel-lines { display: flex; flex-direction: column; }
+.previsionnel-line { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; font-size: 13px; color: var(--text2); }
+.previsionnel-line .val { font-family: var(--font-mono); font-weight: 600; color: var(--text); }
+.previsionnel-line.total { border-top: 1px solid var(--border2); margin-top: 4px; padding-top: 12px; font-weight: 700; font-size: 15px; color: var(--text); }
+.previsionnel-line.total .val { font-size: 20px; font-weight: 700; }
+
 .bilan-card { text-align: center; }
 .bilan-montant { font-family: var(--font-mono); font-weight: 700; font-size: 36px; }
 .bilan-sub { font-size: 12px; color: var(--text3); margin-top: 4px; }

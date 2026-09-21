@@ -13,12 +13,13 @@ const CATEGORIES = {
   sport: { label: 'Sport', icon: '💪', color: 'var(--cat-sport)' },
   shopping: { label: 'Shopping', icon: '🛍️', color: 'var(--cat-shopping)' },
   sante: { label: 'Santé', icon: '💊', color: 'var(--cat-sante)' },
+  investissement: { label: 'Investissement', icon: '🪙', color: 'var(--cat-investissement)' },
   autres: { label: 'Autres', icon: '📦', color: 'var(--cat-autres)' }
 };
 
 const DEFAULT_BUDGET_PREVISIONNEL = {
   alimentation: 300, transport: 120, logement: 500, loisirs: 150,
-  sport: 50, shopping: 100, sante: 50, autres: 100
+  sport: 50, shopping: 100, sante: 50, investissement: 100, autres: 100
 };
 
 const DEFAULT_ABONNEMENTS = [
@@ -174,6 +175,28 @@ function getBudgetPrevisionnelMois(mois) {
 
 function getBudgetMensuelTotalMois(mois) {
   return Object.values(getBudgetPrevisionnelMois(mois)).reduce((s, v) => s + v, 0);
+}
+
+/* Modifie manuellement le budget d'une catégorie pour le mois affiché :
+   si le mode % est actif, on recalcule le % correspondant (à partir du
+   salaire effectif de ce mois) pour que la modification reste cohérente
+   les mois suivants ; sinon on modifie directement le montant fixe. */
+function setBudgetCategorieMois(cat, montant, mois) {
+  const pourcentages = getPourcentages();
+  if (pourcentages) {
+    const salaireMois = getSalaireEffectifMois(mois) || 0;
+    pourcentages[cat] = salaireMois > 0 ? (montant / salaireMois) * 100 : 0;
+    savePourcentages(pourcentages);
+  } else {
+    const budget = getBudgetPrevisionnel();
+    budget[cat] = montant;
+    saveBudgetPrevisionnel(budget);
+  }
+}
+
+/* ---------- REVENU EFFECTIF DU MOIS (salaire variable + autres revenus fixes) ---------- */
+function getRevenuMensuelEffectif(mois) {
+  return getSalaireEffectifMois(mois) + getTotalRevenus();
 }
 
 /* ---------- FORMATAGE ---------- */

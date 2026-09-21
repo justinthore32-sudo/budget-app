@@ -76,13 +76,13 @@ function initOnboarding() {
   document.getElementById('onboard-abo-fields').innerHTML = buildOnboardingAboFields();
 
   const revenusContainer = document.getElementById('onboard-revenus-fields');
-  addOnboardRevenuRow(revenusContainer, 'Salaire');
   document.getElementById('btn-add-onboard-revenu').addEventListener('click', () => addOnboardRevenuRow(revenusContainer));
 
   document.getElementById('onboard-form').addEventListener('submit', (e) => {
     e.preventDefault();
 
     const prenom = document.getElementById('onboard-prenom').value.trim() || 'Toi';
+    const salaire = parseFloat(document.getElementById('onboard-salaire').value) || 0;
     const soldeCb = parseFloat(document.getElementById('onboard-solde-cb').value) || 0;
     const soldeEsp = parseFloat(document.getElementById('onboard-solde-esp').value) || 0;
 
@@ -106,7 +106,8 @@ function initOnboarding() {
       }
     });
 
-    saveParams({ prenom, revenus, mois_debut: currentMonthKey() });
+    saveParams({ prenom, revenus, salaire_type: salaire, mois_debut: currentMonthKey() });
+    saveSalaireMois(currentMonthKey(), salaire);
     saveBudgetPrevisionnel(budgetPrevisionnel);
     saveAbonnements(abonnements);
     saveComptes({ cb: { solde: soldeCb, historique: [] }, especes: { solde: soldeEsp, historique: [] } });

@@ -38,6 +38,26 @@ function calculerProjection() {
   return { totalActuel, projectionFinAnnee: totalProjecete, budgetAnnuel, ecartPrevu, tendance: ecartPrevu >= 0 ? 'positif' : 'negatif' };
 }
 
+function calculerPrevisionnelAnnuel() {
+  const mois = moisDeAnnee(anneeActuelle());
+  const revenusAnnuels = mois.reduce((s, m) => s + getRevenuMensuelEffectif(m), 0);
+  const chargesFixesAnnuelles = getAbonnementsMensuelTotal() * 12;
+  const depensesVariablesProjetees = calculerProjection().projectionFinAnnee;
+  const resteAVivre = revenusAnnuels - chargesFixesAnnuelles - depensesVariablesProjetees;
+  return { revenusAnnuels, chargesFixesAnnuelles, depensesVariablesProjetees, resteAVivre };
+}
+
+function renderPrevisionnelAnnuel() {
+  const container = document.getElementById('previsionnel-annuel-lines');
+  if (!container) return;
+  const p = calculerPrevisionnelAnnuel();
+  container.innerHTML = `
+    <div class="previsionnel-line"><span>Revenus annuels prévus</span><span class="val text-green">+${formatEuro(p.revenusAnnuels, 0)}</span></div>
+    <div class="previsionnel-line"><span>Charges fixes (abonnements × 12)</span><span class="val text-red">−${formatEuro(p.chargesFixesAnnuelles, 0)}</span></div>
+    <div class="previsionnel-line"><span>Dépenses variables (projetées)</span><span class="val text-red">−${formatEuro(p.depensesVariablesProjetees, 0)}</span></div>
+    <div class="previsionnel-line total"><span>Reste à vivre (année)</span><span class="val ${p.resteAVivre >= 0 ? 'text-green' : 'text-red'}">${formatEuro(p.resteAVivre, 0)}</span></div>`;
+}
+
 function renderResumeAnnuel() {
   const proj = calculerProjection();
   const economies = proj.budgetAnnuel - proj.totalActuel;
@@ -186,6 +206,7 @@ function renderRecapTable() {
 }
 
 window.refreshAnnuel = function refreshAnnuel() {
+  renderPrevisionnelAnnuel();
   renderResumeAnnuel();
   renderTopCategories();
   renderBarChart();

@@ -12,14 +12,25 @@ function shiftMois(mois, delta) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
+function renderPrevisionnelMois() {
+  const container = document.getElementById('previsionnel-mois-lines');
+  if (!container) return;
+
+  const revenus = getRevenuMensuelEffectif(moisActuel);
+  const chargesFixes = getAbonnementsMensuelTotal();
+  const depensesVariables = getTotalMois(moisActuel);
+  const resteAVivre = revenus - chargesFixes - depensesVariables;
+
+  container.innerHTML = `
+    <div class="previsionnel-line"><span>Revenus</span><span class="val text-green">+${formatEuro(revenus, 0)}</span></div>
+    <div class="previsionnel-line"><span>Charges fixes (abonnements)</span><span class="val text-red">−${formatEuro(chargesFixes, 0)}</span></div>
+    <div class="previsionnel-line"><span>Dépenses variables</span><span class="val text-red">−${formatEuro(depensesVariables, 0)}</span></div>
+    <div class="previsionnel-line total"><span>Reste à vivre</span><span class="val ${resteAVivre >= 0 ? 'text-green' : 'text-red'}">${formatEuro(resteAVivre, 0)}</span></div>`;
+}
+
 function renderSalaireBanner() {
   const banner = document.getElementById('salaire-mois-banner');
   if (!banner) return;
-
-  if (!isBudgetPourcentageActif()) {
-    banner.classList.add('hidden');
-    return;
-  }
 
   banner.classList.remove('hidden');
   const salaires = getSalairesMensuels();
@@ -140,10 +151,46 @@ function renderTransactionsMois() {
     </div>`).join('');
 }
 
+function openEditBudgetsModal() {
+  const budget = getBudgetPrevisionnelMois(moisActuel);
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal-sheet">
+      <div class="modal-title">Modifier le budget par catégorie</div>
+      <div style="display:flex; flex-direction:column; gap:10px; max-height:50vh; overflow-y:auto; margin-bottom:14px;">
+        ${Object.entries(CATEGORIES).map(([cat, meta]) => `
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="width:26px; text-align:center;">${meta.icon}</span>
+            <span style="flex:1; font-size:13px; color:var(--text2);">${meta.label}</span>
+            <input type="number" class="field-input" style="width:100px; text-align:right;" data-edit-budget-cat="${cat}" value="${Math.round(budget[cat] || 0)}" inputmode="decimal" step="0.01" min="0">
+          </div>`).join('')}
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" data-act="cancel">Annuler</button>
+        <button class="btn btn-primary" data-act="ok">Enregistrer</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+  overlay.querySelector('[data-act="cancel"]').addEventListener('click', () => overlay.remove());
+  overlay.querySelector('[data-act="ok"]').addEventListener('click', () => {
+    overlay.querySelectorAll('[data-edit-budget-cat]').forEach((input) => {
+      const montant = parseFloat(input.value) || 0;
+      setBudgetCategorieMois(input.dataset.editBudgetCat, montant, moisActuel);
+    });
+    overlay.remove();
+    showToast('Budget mis à jour ✓');
+    window.refreshMensuel();
+  });
+}
+
 window.refreshMensuel = function refreshMensuel() {
   if (!moisActuel) moisActuel = currentMonthKey();
   document.getElementById('mensuel-month-label').textContent = formatMonthLabel(moisActuel);
   renderSalaireBanner();
+  renderPrevisionnelMois();
   renderBilanGlobal();
   renderDonut();
   renderCategorieBudgets();
@@ -155,4 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const nextBtn = document.getElementById('mensuel-next');
   if (prevBtn) prevBtn.addEventListener('click', () => { moisActuel = shiftMois(moisActuel || currentMonthKey(), -1); window.refreshMensuel(); });
   if (nextBtn) nextBtn.addEventListener('click', () => { moisActuel = shiftMois(moisActuel || currentMonthKey(), 1); window.refreshMensuel(); });
+
+  const editBudgetsBtn = document.getElementById('btn-edit-budgets');
+  if (editBudgetsBtn) editBudgetsBtn.addEventListener('click', openEditBudgetsModal);
 });
