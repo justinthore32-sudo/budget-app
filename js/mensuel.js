@@ -12,9 +12,35 @@ function shiftMois(mois, delta) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
+function renderSalaireBanner() {
+  const banner = document.getElementById('salaire-mois-banner');
+  if (!banner) return;
+
+  if (!isBudgetPourcentageActif()) {
+    banner.classList.add('hidden');
+    return;
+  }
+
+  banner.classList.remove('hidden');
+  const salaires = getSalairesMensuels();
+  const saisi = salaires[moisActuel];
+
+  banner.innerHTML = saisi != null
+    ? `<span>💰 Salaire de ${formatMonthLabel(moisActuel)} : <strong class="mono">${formatEuro(saisi, 0)}</strong></span><button id="btn-edit-salaire-mois" class="btn-expand" style="color:var(--green);">Modifier</button>`
+    : `<span>💰 Quel est ton salaire pour ${formatMonthLabel(moisActuel)} ?</span><button id="btn-edit-salaire-mois" class="btn-expand" style="color:var(--green);">Renseigner</button>`;
+
+  document.getElementById('btn-edit-salaire-mois').addEventListener('click', async () => {
+    const montant = await showAmountPrompt(`Salaire — ${formatMonthLabel(moisActuel)}`, { placeholder: String(getSalaireType() || '0.00') });
+    if (!montant) return;
+    saveSalaireMois(moisActuel, montant);
+    showToast('Salaire enregistré ✓');
+    window.refreshMensuel();
+  });
+}
+
 function renderBilanGlobal() {
   const total = getTotalMois(moisActuel);
-  const budget = getBudgetMensuelTotal();
+  const budget = getBudgetMensuelTotalMois(moisActuel);
   const pct = budget > 0 ? (total / budget) * 100 : 0;
   const status = pct < 80 ? 'vert' : pct < 100 ? 'orange' : 'rouge';
   const restant = budget - total;
@@ -73,7 +99,7 @@ function renderDonut() {
 
 function renderCategorieBudgets() {
   const list = document.getElementById('cat-budget-list');
-  const budget = getBudgetPrevisionnel();
+  const budget = getBudgetPrevisionnelMois(moisActuel);
 
   list.innerHTML = Object.entries(CATEGORIES).map(([cat, meta]) => {
     const depense = getTotalCategorieMois(cat, moisActuel);
@@ -117,6 +143,7 @@ function renderTransactionsMois() {
 window.refreshMensuel = function refreshMensuel() {
   if (!moisActuel) moisActuel = currentMonthKey();
   document.getElementById('mensuel-month-label').textContent = formatMonthLabel(moisActuel);
+  renderSalaireBanner();
   renderBilanGlobal();
   renderDonut();
   renderCategorieBudgets();

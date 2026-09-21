@@ -3,6 +3,44 @@
    Page 4 — Abonnements récurrents.
    ============================================ */
 
+function renderPourcentageCard() {
+  const btn = document.getElementById('btn-configurer-pourcentage');
+  const summary = document.getElementById('pourcentage-summary');
+  const intro = document.getElementById('pourcentage-intro');
+  const pourcentages = getPourcentages();
+
+  if (!pourcentages) {
+    summary.classList.add('hidden');
+    intro.classList.remove('hidden');
+    btn.textContent = 'Configurer le budget en %';
+    return;
+  }
+
+  intro.classList.add('hidden');
+  btn.textContent = 'Recalculer depuis le budget actuel';
+  summary.classList.remove('hidden');
+  const salaireType = getSalaireType();
+  summary.innerHTML = `
+    <div class="pourcentage-row"><strong>Référence : ${formatEuro(salaireType, 0)}</strong></div>
+    ${Object.entries(CATEGORIES).map(([cat, meta]) => `
+      <div class="pourcentage-row">
+        <span>${meta.icon} ${meta.label}</span>
+        <span class="mono">${(pourcentages[cat] || 0).toFixed(1)}% · ${formatEuro((pourcentages[cat] || 0) / 100 * salaireType, 0)}</span>
+      </div>`).join('')}`;
+}
+
+async function configurerPourcentage() {
+  const salaireActuel = getSalaireType() || getTotalRevenus();
+  const salaireType = await showAmountPrompt('Salaire de référence pour calculer les %', { placeholder: salaireActuel ? String(salaireActuel) : '1725' });
+  if (!salaireType) return;
+
+  const pourcentages = calculerPourcentagesDepuisBudget(salaireType);
+  savePourcentages(pourcentages);
+  saveSalaireType(salaireType);
+  showToast('Répartition en % enregistrée ✓');
+  renderPourcentageCard();
+}
+
 function renderAbonnements() {
   const abos = getAbonnements();
   const totalMensuel = abos.filter((a) => a.actif).reduce((s, a) => s + a.montant, 0);
@@ -129,6 +167,7 @@ function ajouterAbonnement(e) {
 window.refreshAbonnements = function refreshAbonnements() {
   renderRevenus();
   renderAbonnements();
+  renderPourcentageCard();
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -154,4 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const revenuForm = document.getElementById('revenu-form');
   if (revenuForm) revenuForm.addEventListener('submit', ajouterRevenu);
+
+  const pourcentageBtn = document.getElementById('btn-configurer-pourcentage');
+  if (pourcentageBtn) pourcentageBtn.addEventListener('click', configurerPourcentage);
 });

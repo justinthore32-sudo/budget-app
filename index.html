@@ -90,6 +90,8 @@
       <button id="mensuel-next">→</button>
     </div>
 
+    <div id="salaire-mois-banner" class="card salaire-banner hidden"></div>
+
     <div class="card bilan-card">
       <div id="bilan-montant" class="bilan-montant mono">—</div>
       <div id="bilan-sub" class="bilan-sub"></div>
@@ -174,6 +176,13 @@
     <div>
       <div class="section-title">Sources de revenus</div>
       <div id="revenus-list" class="card"></div>
+    </div>
+
+    <div class="card" style="display:flex; flex-direction:column; gap:12px;">
+      <div class="section-title" style="margin-bottom:0;">Budget en % du salaire</div>
+      <p id="pourcentage-intro" class="text3" style="font-size:12px;">Ton salaire n'est jamais le même d'un mois à l'autre. Configure une répartition en % une fois, elle s'appliquera automatiquement chaque mois au salaire que tu saisis sur la page Mensuel.</p>
+      <button id="btn-configurer-pourcentage" class="btn btn-outline btn-block">Configurer le budget en %</button>
+      <div id="pourcentage-summary" class="hidden" style="display:flex; flex-direction:column; gap:2px;"></div>
     </div>
 
     <div class="card abo-total-card">

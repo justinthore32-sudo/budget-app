@@ -114,6 +114,68 @@ function getBudgetMensuelTotal() {
   return Object.values(b).reduce((s, v) => s + v, 0);
 }
 
+/* ---------- BUDGET EN % DU SALAIRE ----------
+   Le salaire n'est jamais le même d'un mois à l'autre : au lieu d'un
+   budget fixe en euros par catégorie, on définit une répartition en %
+   (calculée une fois à partir d'un salaire de référence), puis on
+   l'applique chaque mois au salaire réellement saisi ce mois-là. */
+const getSalaireType = () => getParams()?.salaire_type || 0;
+function saveSalaireType(v) {
+  const params = getParams() || {};
+  params.salaire_type = v;
+  saveParams(params);
+}
+
+const getPourcentages = () => JSON.parse(localStorage.getItem('budget_pourcentages') || 'null');
+const savePourcentages = (p) => localStorage.setItem('budget_pourcentages', JSON.stringify(p));
+const isBudgetPourcentageActif = () => !!getPourcentages();
+
+const getSalairesMensuels = () => JSON.parse(localStorage.getItem('budget_salaires_mensuels') || '{}');
+function saveSalaireMois(mois, montant) {
+  const salaires = getSalairesMensuels();
+  salaires[mois] = montant;
+  localStorage.setItem('budget_salaires_mensuels', JSON.stringify(salaires));
+}
+
+/* Salaire à utiliser pour un mois donné : celui saisi ce mois-ci, sinon
+   le dernier salaire connu avant ce mois, sinon le salaire de référence. */
+function getSalaireEffectifMois(mois) {
+  const salaires = getSalairesMensuels();
+  if (salaires[mois] != null) return salaires[mois];
+  const moisConnus = Object.keys(salaires).filter((m) => m <= mois).sort();
+  if (moisConnus.length > 0) return salaires[moisConnus[moisConnus.length - 1]];
+  return getSalaireType();
+}
+
+/* Calcule la répartition en % de chaque catégorie par rapport à un
+   salaire de référence, à partir des montants déjà définis dans le
+   budget prévisionnel (fixe) — appelé une fois à l'activation. */
+function calculerPourcentagesDepuisBudget(salaireType) {
+  const budget = getBudgetPrevisionnel();
+  const pourcentages = {};
+  Object.entries(budget).forEach(([cat, montant]) => {
+    pourcentages[cat] = salaireType > 0 ? (montant / salaireType) * 100 : 0;
+  });
+  return pourcentages;
+}
+
+/* Budget prévisionnel effectif d'un mois donné : si le mode % est actif,
+   dérivé du salaire de ce mois ; sinon le budget fixe classique. */
+function getBudgetPrevisionnelMois(mois) {
+  const pourcentages = getPourcentages();
+  if (!pourcentages) return getBudgetPrevisionnel();
+  const salaireMois = getSalaireEffectifMois(mois);
+  const budget = {};
+  Object.keys(CATEGORIES).forEach((cat) => {
+    budget[cat] = ((pourcentages[cat] || 0) / 100) * salaireMois;
+  });
+  return budget;
+}
+
+function getBudgetMensuelTotalMois(mois) {
+  return Object.values(getBudgetPrevisionnelMois(mois)).reduce((s, v) => s + v, 0);
+}
+
 /* ---------- FORMATAGE ---------- */
 function formatEuro(n, decimals = 2) {
   const v = Number(n) || 0;

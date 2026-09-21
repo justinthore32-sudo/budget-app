@@ -33,7 +33,7 @@ function calculerProjection() {
   const moisRestants = Math.max(0, 12 - moisEcoules);
   const projectionRestante = moyenneMensuelle * moisRestants;
   const totalProjecete = totalActuel + projectionRestante;
-  const budgetAnnuel = getBudgetMensuelTotal() * 12;
+  const budgetAnnuel = moisDeAnnee(anneeActuelle()).reduce((s, m) => s + getBudgetMensuelTotalMois(m), 0);
   const ecartPrevu = budgetAnnuel - totalProjecete;
   return { totalActuel, projectionFinAnnee: totalProjecete, budgetAnnuel, ecartPrevu, tendance: ecartPrevu >= 0 ? 'positif' : 'negatif' };
 }
@@ -79,7 +79,7 @@ function renderBarChart() {
   const ctx = document.getElementById('bar-chart-annuel');
   if (!ctx || typeof Chart === 'undefined') return;
   const mois = moisDeAnnee(anneeActuelle());
-  const budgetMensuel = getBudgetMensuelTotal();
+  const budgetsMensuels = mois.map((m) => getBudgetMensuelTotalMois(m));
 
   if (barChart) barChart.destroy();
   barChart = new Chart(ctx, {
@@ -90,12 +90,12 @@ function renderBarChart() {
         {
           label: 'Dépensé',
           data: mois.map((m) => getTotalMois(m)),
-          backgroundColor: mois.map((m) => getTotalMois(m) > budgetMensuel ? 'rgba(239,68,68,0.75)' : 'rgba(16,185,129,0.75)'),
+          backgroundColor: mois.map((m, i) => getTotalMois(m) > budgetsMensuels[i] ? 'rgba(239,68,68,0.75)' : 'rgba(16,185,129,0.75)'),
           borderRadius: 4
         },
         {
           label: 'Budget',
-          data: mois.map(() => budgetMensuel),
+          data: budgetsMensuels,
           backgroundColor: 'rgba(255,255,255,0.08)',
           borderRadius: 4
         }
@@ -168,10 +168,10 @@ function renderLineChart() {
 
 function renderRecapTable() {
   const mois = moisDeAnnee(anneeActuelle());
-  const budgetMensuel = getBudgetMensuelTotal();
   const tbody = document.getElementById('recap-table-body');
   tbody.innerHTML = mois.map((m) => {
     const total = getTotalMois(m);
+    const budgetMensuel = getBudgetMensuelTotalMois(m);
     const ecart = budgetMensuel - total;
     const statutIcon = total === 0 ? '—' : (ecart >= 0 ? '✅' : '⚠️');
     return `

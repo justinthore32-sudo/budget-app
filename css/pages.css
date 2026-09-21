@@ -177,6 +177,12 @@
 .month-nav button { font-size: 18px; color: var(--text2); padding: 6px 12px; }
 .month-nav .month-label { font-weight: 700; font-size: 15px; color: var(--text); text-transform: capitalize; }
 
+.salaire-banner { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; color: var(--text2); border-color: var(--green-d); }
+.salaire-banner .btn-expand { flex-shrink: 0; font-size: 12.5px; font-weight: 700; }
+
+.pourcentage-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.pourcentage-row:last-child { border-bottom: none; }
+
 .bilan-card { text-align: center; }
 .bilan-montant { font-family: var(--font-mono); font-weight: 700; font-size: 36px; }
 .bilan-sub { font-size: 12px; color: var(--text3); margin-top: 4px; }

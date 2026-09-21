@@ -7,7 +7,7 @@ function buildAnalysePromptData() {
   const mois = currentMonthKey();
   const depensesMois = {};
   Object.keys(CATEGORIES).forEach((cat) => { depensesMois[cat] = getTotalCategorieMois(cat, mois); });
-  const budgetPrev = getBudgetPrevisionnel();
+  const budgetPrev = getBudgetPrevisionnelMois(mois);
   const abonnements = getAbonnements().filter((a) => a.actif);
   const revenus = getRevenus();
 
