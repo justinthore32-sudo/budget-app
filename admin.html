@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="theme-color" content="#060810"/>
+<title>Gestion des comptes — Budget App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/main.css">
+<link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+
+<div class="admin-header">
+  <a href="index.html" class="back-link">←</a>
+  <div>
+    <div class="app-logo" style="font-size:15px;">Gestion des comptes</div>
+    <div class="text3" style="font-size:11px;">Connecté en tant que <span id="admin-name"></span></div>
+  </div>
+</div>
+
+<main class="container" style="display:flex; flex-direction:column; gap:22px; padding-bottom:60px;">
+
+  <div>
+    <div class="section-title">Créer un compte</div>
+    <form id="create-user-form" class="card" style="display:flex; flex-direction:column; gap:10px;">
+      <input type="text" id="new-username" class="field-input" placeholder="Nom d'utilisateur" autocapitalize="none" required>
+      <input type="text" id="new-displayname" class="field-input" placeholder="Nom affiché (ex: Justin)">
+      <input type="password" id="new-password" class="field-input" placeholder="Mot de passe" required>
+      <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text2);">
+        <input type="checkbox" id="new-isadmin"> Compte administrateur
+      </label>
+      <button type="submit" class="btn btn-primary btn-block">Créer le compte</button>
+      <div id="create-user-error" class="login-error hidden"></div>
+    </form>
+  </div>
+
+  <div>
+    <div class="section-title">Comptes existants</div>
+    <div id="users-list" style="display:flex; flex-direction:column; gap:10px;"></div>
+  </div>
+
+</main>
+
+<script src="js/utils.js"></script>
+<script src="js/api.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Budget"/>
+<meta name="theme-color" content="#060810"/>
+<title>Budget App</title>
+<link rel="manifest" href="manifest.json"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/main.css">
+<link rel="stylesheet" href="css/pages.css">
+<script>
+  /* Garde d'authentification — synchrone, avant tout rendu */
+  if (!localStorage.getItem('budget-app-token')) {
+    window.location.href = 'login.html';
+  }
+</script>
+</head>
+<body>
+
+<header class="app-header">
+  <div>
+    <div class="app-logo">Budget</div>
+    <div id="header-date" class="text3" style="font-size:11px; text-transform:capitalize;"></div>
+  </div>
+  <div style="display:flex; align-items:center; gap:14px;">
+    <div class="app-header-soldes">
+      <div class="solde-item">
+        <span class="solde-label">💳 CB</span>
+        <span id="header-solde-cb" class="solde-val">—</span>
+      </div>
+      <div class="solde-item">
+        <span class="solde-label">💵 Esp.</span>
+        <span id="header-solde-esp" class="solde-val">—</span>
+      </div>
+    </div>
+    <div class="user-menu-wrap">
+      <button id="user-menu-btn" class="user-avatar"><span id="user-initial">?</span></button>
+      <div id="user-menu" class="user-menu">
+        <div id="user-menu-name" class="user-menu-name">Bonjour</div>
+        <a id="user-menu-admin" href="admin.html" class="hidden">⚙️ Gestion des comptes</a>
+        <button id="user-menu-password">🔑 Changer mon mot de passe</button>
+        <button id="user-menu-export">⬇️ Exporter mes données</button>
+        <label style="cursor:pointer;">
+          📤 Importer des données
+          <input type="file" id="user-menu-import-input" accept="application/json" class="hidden">
+        </label>
+        <button id="user-menu-logout" class="logout-item">↩ Déconnexion</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============ PAGE 1 — SAISIE ============ -->
+  <section id="page-saisie" class="page">
+    <div class="montant-input">
+      <input type="number" id="montant" placeholder="0.00" inputmode="decimal" step="0.01" min="0">
+      <span class="currency">€</span>
+    </div>
+
+    <div id="cat-select-grid" class="cat-select-grid"></div>
+
+    <div class="compte-toggle">
+      <button id="btn-cb" class="active">💳 CB</button>
+      <button id="btn-esp">💵 Espèces</button>
+    </div>
+
+    <input type="text" id="description" class="field-input" placeholder="Description (optionnel)">
+
+    <button id="btn-valider-depense" class="btn-valider">Valider la dépense</button>
+
+    <div>
+      <div class="section-title">Dernières dépenses</div>
+      <div id="dernieres-depenses-list" class="card"></div>
+    </div>
+  </section>
+
+  <!-- ============ PAGE 2 — MENSUEL ============ -->
+  <section id="page-mensuel" class="page">
+    <div class="month-nav">
+      <button id="mensuel-prev">←</button>
+      <span id="mensuel-month-label" class="month-label"></span>
+      <button id="mensuel-next">→</button>
+    </div>
+
+    <div class="card bilan-card">
+      <div id="bilan-montant" class="bilan-montant mono">—</div>
+      <div id="bilan-sub" class="bilan-sub"></div>
+      <div id="bilan-badge" class="bilan-badge"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Répartition par catégorie</div>
+      <div class="chart-wrap"><canvas id="donut-chart"></canvas></div>
+      <div id="donut-empty" class="empty-state hidden"><div class="empty-icon">🍩</div><p>Aucune dépense ce mois-ci.</p></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Budget par catégorie</div>
+      <div id="cat-budget-list"></div>
+    </div>
+
+    <div>
+      <div class="section-title">Transactions du mois</div>
+      <div id="transactions-mois-list" class="card"></div>
+    </div>
+  </section>
+
+  <!-- ============ PAGE 3 — ANNUEL ============ -->
+  <section id="page-annuel" class="page">
+    <div class="stat-grid">
+      <div class="stat-box"><div class="stat-label">Dépensé</div><div id="annuel-total" class="stat-val mono">—</div></div>
+      <div class="stat-box"><div class="stat-label">Budget</div><div id="annuel-budget" class="stat-val mono">—</div></div>
+      <div class="stat-box"><div class="stat-label">Écart</div><div id="annuel-economies" class="stat-val mono">—</div></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Projection fin d'année</div>
+      <p id="annuel-projection" style="font-size:13px; color:var(--text2);"></p>
+      <div id="annuel-projection-badge" class="bilan-badge" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Dépenses vs budget — 12 mois</div>
+      <div class="chart-wrap"><canvas id="bar-chart-annuel"></canvas></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Évolution du solde CB</div>
+      <div class="chart-wrap"><canvas id="line-chart-solde"></canvas></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Top 3 catégories de l'année</div>
+      <div id="top-categories-list"></div>
+    </div>
+
+    <div class="card" style="overflow-x:auto;">
+      <div class="section-title">Récap 12 mois</div>
+      <table class="recap-table">
+        <thead><tr><th>Mois</th><th>Dépenses</th><th>Budget</th><th>Écart</th><th></th></tr></thead>
+        <tbody id="recap-table-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ PAGE 4 — ABONNEMENTS ============ -->
+  <section id="page-abonnements" class="page">
+    <div class="card abo-total-card">
+      <div class="section-title" style="text-align:center;">Revenus mensuels</div>
+      <div id="revenus-total-mensuel" class="abo-total-val mono text-green">—</div>
+    </div>
+
+    <button id="btn-show-revenu-form" class="btn btn-outline btn-block">+ Ajouter un revenu</button>
+
+    <div id="revenu-form-wrap" class="card hidden" style="display:flex; flex-direction:column; gap:10px;">
+      <form id="revenu-form" style="display:flex; flex-direction:column; gap:10px;">
+        <input type="text" id="revenu-nom" class="field-input" placeholder="Salaire, revenu foncier, freelance…" required>
+        <input type="number" id="revenu-montant" class="field-input" placeholder="Montant mensuel (€)" inputmode="decimal" step="0.01" min="0" required>
+        <div class="modal-actions">
+          <button type="button" id="btn-cancel-revenu-form" class="btn btn-outline">Annuler</button>
+          <button type="submit" class="btn btn-primary">Ajouter</button>
+        </div>
+      </form>
+    </div>
+
+    <div>
+      <div class="section-title">Sources de revenus</div>
+      <div id="revenus-list" class="card"></div>
+    </div>
+
+    <div class="card abo-total-card">
+      <div id="abo-total-mensuel" class="abo-total-val mono">—</div>
+      <div id="abo-total-annuel" class="abo-total-annuel"></div>
+    </div>
+
+    <button id="btn-show-abo-form" class="btn btn-outline btn-block">+ Ajouter un abonnement</button>
+
+    <div id="abo-form-wrap" class="card hidden" style="display:flex; flex-direction:column; gap:10px;">
+      <form id="abo-form" style="display:flex; flex-direction:column; gap:10px;">
+        <input type="text" id="abo-nom" class="field-input" placeholder="Nom de l'abonnement" required>
+        <input type="number" id="abo-montant" class="field-input" placeholder="Montant mensuel (€)" inputmode="decimal" step="0.01" min="0" required>
+        <select id="abo-cat" class="field-input"></select>
+        <div class="modal-actions">
+          <button type="button" id="btn-cancel-abo-form" class="btn btn-outline">Annuler</button>
+          <button type="submit" class="btn btn-primary">Ajouter</button>
+        </div>
+      </form>
+    </div>
+
+    <div>
+      <div class="section-title">Abonnements actifs</div>
+      <div id="abonnements-list" class="card"></div>
+    </div>
+  </section>
+
+  <!-- ============ PAGE 5 — COMPTES ============ -->
+  <section id="page-comptes" class="page">
+    <div class="comptes-grid">
+      <div class="card compte-card">
+        <div class="compte-label">💳 Carte bancaire</div>
+        <div id="solde-cb" class="compte-solde mono">—</div>
+        <div class="compte-actions">
+          <button id="cb-sub">−</button>
+          <button id="cb-add">+</button>
+        </div>
+      </div>
+      <div class="card compte-card">
+        <div class="compte-label">💵 Espèces</div>
+        <div id="solde-especes" class="compte-solde mono">—</div>
+        <div class="compte-actions">
+          <button id="esp-sub">−</button>
+          <button id="esp-add">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card patrimoine-card">
+      <div class="section-title" style="text-align:center;">Patrimoine liquide</div>
+      <div id="patrimoine-total" class="patrimoine-val mono">—</div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Évolution solde CB — 30 jours</div>
+      <div class="chart-wrap"><canvas id="comptes-line-chart"></canvas></div>
+    </div>
+
+    <div>
+      <div class="section-title">Historique · Carte bancaire</div>
+      <div id="historique-cb" class="card"></div>
+    </div>
+
+    <div>
+      <div class="section-title">Historique · Espèces</div>
+      <div id="historique-especes" class="card"></div>
+    </div>
+  </section>
+
+  <!-- ============ PAGE 6 — ANALYSE IA ============ -->
+  <section id="page-analyse" class="page">
+    <div id="analyse-intro" class="card analyse-intro">
+      <div class="analyse-emoji">🤖</div>
+      <h2 style="font-size:16px; margin-bottom:6px;">Analyse IA de ton budget</h2>
+      <p class="text3" style="font-size:12.5px; margin-bottom:16px;">Claude analyse tes dépenses du mois et te donne des conseils personnalisés.</p>
+      <button id="btn-analyser" class="btn btn-primary btn-block">Analyser mon budget</button>
+    </div>
+
+    <div id="analyse-loading" class="hidden" style="display:flex; flex-direction:column; align-items:center; gap:12px; padding:30px;">
+      <div class="spinner"></div>
+      <span class="text3" style="font-size:12.5px;">Analyse en cours…</span>
+    </div>
+
+    <div id="analyse-result"></div>
+  </section>
+
+</main>
+
+<nav class="bottom-nav">
+  <button id="nav-saisie" class="nav-item active" onclick="showPage('saisie')">
+    <span class="nav-icon">➕</span><span class="nav-label">Saisie</span>
+  </button>
+  <button id="nav-mensuel" class="nav-item" onclick="showPage('mensuel')">
+    <span class="nav-icon">📅</span><span class="nav-label">Mensuel</span>
+  </button>
+  <button id="nav-annuel" class="nav-item" onclick="showPage('annuel')">
+    <span class="nav-icon">📈</span><span class="nav-label">Annuel</span>
+  </button>
+  <button id="nav-abonnements" class="nav-item" onclick="showPage('abonnements')">
+    <span class="nav-icon">🔄</span><span class="nav-label">Abos</span>
+  </button>
+  <button id="nav-comptes" class="nav-item" onclick="showPage('comptes')">
+    <span class="nav-icon">💳</span><span class="nav-label">Comptes</span>
+  </button>
+  <button id="nav-analyse" class="nav-item" onclick="showPage('analyse')">
+    <span class="nav-icon">🤖</span><span class="nav-label">IA</span>
+  </button>
+</nav>
+
+<!-- ============ ONBOARDING (premier lancement) ============ -->
+<div id="onboarding-overlay" class="onboard-overlay hidden">
+  <div class="onboard-inner">
+    <div style="text-align:center;">
+      <div style="font-size:32px;">💰</div>
+      <h1 style="font-size:20px; margin-top:8px;">Bienvenue sur Budget</h1>
+      <p class="text3" style="font-size:12.5px; margin-top:4px;">Configure ton budget en 30 secondes.</p>
+    </div>
+
+    <form id="onboard-form" style="display:flex; flex-direction:column; gap:18px;">
+      <div class="onboard-step">
+        <label>Ton prénom</label>
+        <input type="text" id="onboard-prenom" class="field-input" placeholder="Justin" required>
+      </div>
+
+      <div class="onboard-step">
+        <label>Tes revenus mensuels</label>
+        <div id="onboard-revenus-fields" style="display:flex; flex-direction:column; gap:8px;"></div>
+        <button type="button" id="btn-add-onboard-revenu" class="btn btn-outline" style="margin-top:6px;">+ Ajouter un revenu</button>
+      </div>
+
+      <div class="onboard-step">
+        <label>Solde actuel — Carte bancaire (€)</label>
+        <input type="number" id="onboard-solde-cb" class="field-input" placeholder="0" inputmode="decimal" step="0.01" required>
+      </div>
+
+      <div class="onboard-step">
+        <label>Solde actuel — Espèces (€)</label>
+        <input type="number" id="onboard-solde-esp" class="field-input" placeholder="0" inputmode="decimal" step="0.01" required>
+      </div>
+
+      <div class="onboard-step">
+        <label>Budget prévisionnel par catégorie</label>
+        <div id="onboard-cat-fields" style="display:flex; flex-direction:column; gap:8px;"></div>
+      </div>
+
+      <div class="onboard-step">
+        <label>Abonnements à pré-remplir</label>
+        <div id="onboard-abo-fields" style="display:flex; flex-direction:column; gap:10px;"></div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block">Commencer</button>
+    </form>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script src="js/saisie.js"></script>
+<script src="js/mensuel.js"></script>
+<script src="js/annuel.js"></script>
+<script src="js/abonnements.js"></script>
+<script src="js/comptes.js"></script>
+<script src="js/analyse.js"></script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="theme-color" content="#060810"/>
+<title>Connexion — Budget App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/main.css">
+<link rel="stylesheet" href="css/pages.css">
+</head>
+<body class="login-body">
+
+<div class="login-card">
+  <div class="login-logo">
+    <div class="logo-mark">💰</div>
+    <h1>Budget</h1>
+    <p>Connecte-toi pour accéder à ton budget</p>
+  </div>
+
+  <form id="login-form" class="card" style="display:flex; flex-direction:column; gap:12px;">
+    <input type="text" id="login-username" class="field-input" placeholder="Nom d'utilisateur" autocapitalize="none" autocomplete="username" required>
+    <input type="password" id="login-password" class="field-input" placeholder="Mot de passe" autocomplete="current-password" required>
+    <button type="submit" id="login-submit" class="btn btn-primary btn-block">Se connecter</button>
+    <div id="login-error" class="login-error hidden"></div>
+  </form>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+</body>
+</html>

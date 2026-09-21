@@ -1,0 +1,21 @@
+name = "budget-app-proxy"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+[vars]
+ALLOWED_ORIGIN = "https://justinthore32-sudo.github.io"
+
+[[kv_namespaces]]
+binding = "USERS"
+id = "247323af77c847a98408b33377b4eb8d"
+
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "c289e38bd88f45d398ea9b671f5628a7"
+
+# Secrets à définir avec `wrangler secret put NOM` (jamais dans ce fichier) :
+# - ADMIN_BOOTSTRAP_PASSWORD (mot de passe du 1er compte "admin", créé automatiquement au 1er login)
+# - ADMIN_DISPLAY_NAME (optionnel, ex: "Justin")
+# - ANTHROPIC_API_KEY (pour la page Analyse IA — sinon fallback GEMINI_API_KEY)
+# - GEMINI_API_KEY (gratuit à vie sans carte bancaire — aistudio.google.com/apikey)
+# - GEMINI_MODEL (optionnel, défaut "gemini-3.5-flash-lite")
