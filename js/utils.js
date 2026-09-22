@@ -502,15 +502,22 @@ function showTextPrompt(title, { type = 'text', placeholder = '', minLength = 0 
 }
 
 /* ---------- EXPORT / IMPORT DONNÉES ---------- */
+/* Clés locales à ne jamais exporter/importer : spécifiques à cet
+   appareil/session (le code PIN d'un téléphone n'a pas de sens sur un
+   autre), pas des données budgétaires. Tout le reste préfixé "budget_"
+   est exporté automatiquement — évite d'oublier une clé à chaque
+   nouvelle fonctionnalité (c'est déjà arrivé : le salaire mensuel, les
+   % de budget et les objectifs manquaient à l'export). */
+const EXPORT_EXCLUDED_KEYS = ['budget_pin_hash', 'budget_last_export_at', 'budget_export_snooze_until'];
+
 function exportData() {
-  const data = {
-    budget_depenses: getDepenses(),
-    budget_previsionnel: getBudgetPrevisionnel(),
-    budget_abonnements: getAbonnements(),
-    budget_comptes: getComptes(),
-    budget_params: getParams(),
-    exported_at: new Date().toISOString()
-  };
+  const data = { exported_at: new Date().toISOString() };
+  Object.keys(localStorage)
+    .filter((k) => k.startsWith('budget_') && !EXPORT_EXCLUDED_KEYS.includes(k))
+    .forEach((k) => {
+      try { data[k] = JSON.parse(localStorage.getItem(k)); } catch (err) { data[k] = localStorage.getItem(k); }
+    });
+
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -529,11 +536,9 @@ function importData(file) {
   reader.onload = () => {
     try {
       const data = JSON.parse(reader.result);
-      if (data.budget_depenses) saveDepenses(data.budget_depenses);
-      if (data.budget_previsionnel) saveBudgetPrevisionnel(data.budget_previsionnel);
-      if (data.budget_abonnements) saveAbonnements(data.budget_abonnements);
-      if (data.budget_comptes) saveComptes(data.budget_comptes);
-      if (data.budget_params) saveParams(data.budget_params);
+      Object.keys(data)
+        .filter((k) => k.startsWith('budget_') && !EXPORT_EXCLUDED_KEYS.includes(k))
+        .forEach((k) => localStorage.setItem(k, JSON.stringify(data[k])));
       showToast('Import réussi ✓');
       setTimeout(() => window.location.reload(), 700);
     } catch (err) {
