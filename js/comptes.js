@@ -5,16 +5,19 @@
 
 let comptesLineChart = null;
 
+const COMPTE_LABELS = { cb: 'Carte bancaire', especes: 'Espèces', investissement: 'Investissement' };
+
 function renderComptesCards() {
   const comptes = getComptes();
   document.getElementById('solde-cb').textContent = formatEuro(comptes.cb.solde);
   document.getElementById('solde-especes').textContent = formatEuro(comptes.especes.solde);
-  document.getElementById('patrimoine-total').textContent = formatEuro(comptes.cb.solde + comptes.especes.solde);
+  document.getElementById('solde-investissement').textContent = formatEuro(comptes.investissement.solde);
+  document.getElementById('patrimoine-total').textContent = formatEuro(comptes.cb.solde + comptes.especes.solde + comptes.investissement.solde);
 }
 
 async function ajusterSolde(compte, type) {
   const label = type === 'add' ? 'Ajouter' : 'Retirer';
-  const montant = await showAmountPrompt(`${label} — ${compte === 'cb' ? 'Carte bancaire' : 'Espèces'}`);
+  const montant = await showAmountPrompt(`${label} — ${COMPTE_LABELS[compte]}`);
   if (!montant) return;
   const ajustement = type === 'add' ? montant : -montant;
   updateSolde(compte, ajustement, 'Ajustement manuel');
@@ -27,18 +30,18 @@ async function ajusterSolde(compte, type) {
 
 function renderHistorique() {
   const comptes = getComptes();
-  ['cb', 'especes'].forEach((compte) => {
+  ['cb', 'especes', 'investissement'].forEach((compte) => {
     const list = document.getElementById(`historique-${compte}`);
     if (!list) return;
 
-    const manuel = (comptes[compte].historique || []).map((h) => ({
-      date: h.date, montant: h.montant, label: h.label
-    }));
-    const depenses = getDepenses().filter((d) => d.compte === compte).map((d) => ({
-      date: d.created_at ? new Date(d.created_at).toISOString() : d.date, montant: -d.montant, label: d.description || CATEGORIES[d.categorie]?.label
-    }));
-
-    const all = [...manuel, ...depenses].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 20);
+    /* `historique` du compte capture déjà TOUS les mouvements (dépenses
+       ET ajustements manuels, via updateSolde appelé dans les deux cas)
+       — inutile (et faux : ça doublait chaque ligne) de re-fusionner
+       avec les dépenses brutes ici. */
+    const all = (comptes[compte].historique || [])
+      .map((h) => ({ date: h.date, montant: h.montant, label: h.label }))
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .slice(0, 20);
 
     if (all.length === 0) {
       list.innerHTML = `<div class="empty-state"><div class="empty-icon">📄</div><p>Aucun mouvement.</p></div>`;
@@ -68,10 +71,9 @@ function renderComptesLineChart() {
   const data = [];
   let running = comptes.cb.solde;
 
-  const events = [
-    ...(comptes.cb.historique || []).map((h) => ({ date: new Date(h.date), montant: h.montant })),
-    ...getDepenses().filter((d) => d.compte === 'cb').map((d) => ({ date: new Date(d.created_at || d.date), montant: -d.montant }))
-  ];
+  /* comptes.cb.historique capture déjà les dépenses (via updateSolde) —
+     ne pas re-fusionner avec getDepenses(), ça compterait chaque mouvement deux fois. */
+  const events = (comptes.cb.historique || []).map((h) => ({ date: new Date(h.date), montant: h.montant }));
 
   const dayBuckets = [];
   for (let i = 0; i < days; i += 1) {
@@ -131,4 +133,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('cb-sub')?.addEventListener('click', () => ajusterSolde('cb', 'sub'));
   document.getElementById('esp-add')?.addEventListener('click', () => ajusterSolde('especes', 'add'));
   document.getElementById('esp-sub')?.addEventListener('click', () => ajusterSolde('especes', 'sub'));
+  document.getElementById('inv-add')?.addEventListener('click', () => ajusterSolde('investissement', 'add'));
+  document.getElementById('inv-sub')?.addEventListener('click', () => ajusterSolde('investissement', 'sub'));
 });

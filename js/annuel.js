@@ -14,6 +14,14 @@ function moisDeAnnee(annee) {
   return Array.from({ length: 12 }, (_, i) => `${annee}-${String(i + 1).padStart(2, '0')}`);
 }
 
+/* Mois réellement suivis dans l'app (à partir de mois_debut) — les mois
+   antérieurs n'ont jamais été budgétés/saisis, donc pas de chiffres à
+   leur associer (ni dépense, ni budget, ni projection). */
+function getMoisTracked(annee = anneeActuelle()) {
+  const debut = getParams()?.mois_debut || moisDeAnnee(annee)[0];
+  return moisDeAnnee(annee).filter((m) => m >= debut);
+}
+
 function getMoisEcoules() {
   const params = getParams();
   const debut = params?.mois_debut || currentMonthKey();
@@ -33,15 +41,15 @@ function calculerProjection() {
   const moisRestants = Math.max(0, 12 - moisEcoules);
   const projectionRestante = moyenneMensuelle * moisRestants;
   const totalProjecete = totalActuel + projectionRestante;
-  const budgetAnnuel = moisDeAnnee(anneeActuelle()).reduce((s, m) => s + getBudgetMensuelTotalMois(m), 0);
+  const budgetAnnuel = getMoisTracked().reduce((s, m) => s + getBudgetMensuelTotalMois(m), 0);
   const ecartPrevu = budgetAnnuel - totalProjecete;
   return { totalActuel, projectionFinAnnee: totalProjecete, budgetAnnuel, ecartPrevu, tendance: ecartPrevu >= 0 ? 'positif' : 'negatif' };
 }
 
 function calculerPrevisionnelAnnuel() {
-  const mois = moisDeAnnee(anneeActuelle());
+  const mois = getMoisTracked();
   const revenusAnnuels = mois.reduce((s, m) => s + getRevenuMensuelEffectif(m), 0);
-  const chargesFixesAnnuelles = getAbonnementsMensuelTotal() * 12;
+  const chargesFixesAnnuelles = getAbonnementsMensuelTotal() * mois.length;
   const depensesVariablesProjetees = calculerProjection().projectionFinAnnee;
   const resteAVivre = revenusAnnuels - chargesFixesAnnuelles - depensesVariablesProjetees;
   return { revenusAnnuels, chargesFixesAnnuelles, depensesVariablesProjetees, resteAVivre };
@@ -51,9 +59,10 @@ function renderPrevisionnelAnnuel() {
   const container = document.getElementById('previsionnel-annuel-lines');
   if (!container) return;
   const p = calculerPrevisionnelAnnuel();
+  const nbMois = getMoisTracked().length;
   container.innerHTML = `
-    <div class="previsionnel-line"><span>Revenus annuels prévus</span><span class="val text-green">+${formatEuro(p.revenusAnnuels, 0)}</span></div>
-    <div class="previsionnel-line"><span>Charges fixes (abonnements × 12)</span><span class="val text-red">−${formatEuro(p.chargesFixesAnnuelles, 0)}</span></div>
+    <div class="previsionnel-line"><span>Revenus prévus (${nbMois} mois suivis)</span><span class="val text-green">+${formatEuro(p.revenusAnnuels, 0)}</span></div>
+    <div class="previsionnel-line"><span>Charges fixes (abonnements × ${nbMois})</span><span class="val text-red">−${formatEuro(p.chargesFixesAnnuelles, 0)}</span></div>
     <div class="previsionnel-line"><span>Dépenses variables (projetées)</span><span class="val text-red">−${formatEuro(p.depensesVariablesProjetees, 0)}</span></div>
     <div class="previsionnel-line total"><span>Reste à vivre (année)</span><span class="val ${p.resteAVivre >= 0 ? 'text-green' : 'text-red'}">${formatEuro(p.resteAVivre, 0)}</span></div>`;
 }
@@ -99,7 +108,9 @@ function renderBarChart() {
   const ctx = document.getElementById('bar-chart-annuel');
   if (!ctx || typeof Chart === 'undefined') return;
   const mois = moisDeAnnee(anneeActuelle());
-  const budgetsMensuels = mois.map((m) => getBudgetMensuelTotalMois(m));
+  const tracked = getMoisTracked();
+  const budgetsMensuels = mois.map((m) => (tracked.includes(m) ? getBudgetMensuelTotalMois(m) : null));
+  const depensesMensuelles = mois.map((m) => (tracked.includes(m) ? getTotalMois(m) : null));
 
   if (barChart) barChart.destroy();
   barChart = new Chart(ctx, {
@@ -109,8 +120,8 @@ function renderBarChart() {
       datasets: [
         {
           label: 'Dépensé',
-          data: mois.map((m) => getTotalMois(m)),
-          backgroundColor: mois.map((m, i) => getTotalMois(m) > budgetsMensuels[i] ? 'rgba(239,68,68,0.75)' : 'rgba(16,185,129,0.75)'),
+          data: depensesMensuelles,
+          backgroundColor: mois.map((m, i) => (depensesMensuelles[i] || 0) > (budgetsMensuels[i] || 0) ? 'rgba(239,68,68,0.75)' : 'rgba(16,185,129,0.75)'),
           borderRadius: 4
         },
         {
@@ -141,18 +152,22 @@ function renderLineChart() {
   const soldeActuel = comptes.cb.solde;
 
   const now = currentMonthKey();
+  /* comptes.cb.historique capture déjà les dépenses (via updateSolde) —
+     ne pas re-fusionner avec getDepensesMois(), ça compterait chaque
+     mouvement deux fois. */
   const netParMois = mois.map((m) => {
     const historiqueNet = (comptes.cb.historique || []).filter((h) => h.date.startsWith(m)).reduce((s, h) => s + h.montant, 0);
-    const depensesNet = -getDepensesMois(m).filter((d) => d.compte === 'cb').reduce((s, d) => s + d.montant, 0);
-    return m <= now ? historiqueNet + depensesNet : null;
+    return m <= now ? historiqueNet : null;
   });
 
+  const debut = getParams()?.mois_debut || now;
   const idxNow = mois.indexOf(now);
+  const idxDebut = mois.indexOf(debut);
   const soldeParMois = new Array(12).fill(null);
   if (idxNow >= 0) {
     soldeParMois[idxNow] = soldeActuel;
     let running = soldeActuel;
-    for (let i = idxNow - 1; i >= 0; i -= 1) {
+    for (let i = idxNow - 1; i >= 0 && i >= idxDebut; i -= 1) {
       running -= (netParMois[i + 1] || 0);
       soldeParMois[i] = running;
     }
@@ -188,8 +203,19 @@ function renderLineChart() {
 
 function renderRecapTable() {
   const mois = moisDeAnnee(anneeActuelle());
+  const tracked = getMoisTracked();
   const tbody = document.getElementById('recap-table-body');
   tbody.innerHTML = mois.map((m) => {
+    if (!tracked.includes(m)) {
+      return `
+      <tr class="text3">
+        <td>${formatMonthLabel(m).split(' ')[0]}</td>
+        <td class="mono">—</td>
+        <td class="mono">—</td>
+        <td class="mono">—</td>
+        <td>—</td>
+      </tr>`;
+    }
     const total = getTotalMois(m);
     const budgetMensuel = getBudgetMensuelTotalMois(m);
     const ecart = budgetMensuel - total;

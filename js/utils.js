@@ -50,7 +50,9 @@ const saveAbonnements = (abos) => localStorage.setItem('budget_abonnements', JSO
 
 const getComptes = () => {
   const raw = localStorage.getItem('budget_comptes');
-  return raw ? JSON.parse(raw) : { cb: { solde: 0, historique: [] }, especes: { solde: 0, historique: [] } };
+  const comptes = raw ? JSON.parse(raw) : { cb: { solde: 0, historique: [] }, especes: { solde: 0, historique: [] } };
+  if (!comptes.investissement) comptes.investissement = { solde: 0, historique: [] };
+  return comptes;
 };
 const saveComptes = (c) => localStorage.setItem('budget_comptes', JSON.stringify(c));
 
@@ -104,6 +106,50 @@ function updateSolde(compte, montant, label) {
     label: label || 'Ajustement'
   });
   saveComptes(comptes);
+}
+
+/* Une dépense en catégorie "investissement" n'est pas de l'argent qui
+   disparaît : elle est débitée du compte payeur (CB/Espèces) ET créditée
+   sur le compte "investissement", qui devient ainsi un vrai solde suivi
+   (visible page Comptes), pas juste une ligne de dépense qui s'évapore. */
+function applyDepenseEffect(dep) {
+  updateSolde(dep.compte, -dep.montant, dep.description || CATEGORIES[dep.categorie]?.label);
+  if (dep.categorie === 'investissement') {
+    updateSolde('investissement', dep.montant, dep.description || 'Investissement');
+  }
+}
+
+function reverseDepenseEffect(dep) {
+  updateSolde(dep.compte, dep.montant, 'Annulation dépense');
+  if (dep.categorie === 'investissement') {
+    updateSolde('investissement', -dep.montant, 'Annulation investissement');
+  }
+}
+
+/* Modification d'une dépense existante : ajuste chaque compte par le
+   delta net plutôt que d'annuler puis réappliquer, pour ne pas polluer
+   l'historique avec des lignes fantômes "annulation" à chaque édition. */
+function applyDepenseEdit(oldDep, newDep) {
+  const label = newDep.description || CATEGORIES[newDep.categorie]?.label || 'Modification';
+
+  if (oldDep.compte === newDep.compte) {
+    const delta = oldDep.montant - newDep.montant;
+    if (delta !== 0) updateSolde(newDep.compte, delta, label);
+  } else {
+    updateSolde(oldDep.compte, oldDep.montant, 'Modification (changement de compte)');
+    updateSolde(newDep.compte, -newDep.montant, label);
+  }
+
+  const oldWasInvest = oldDep.categorie === 'investissement';
+  const newIsInvest = newDep.categorie === 'investissement';
+  if (oldWasInvest && newIsInvest) {
+    const delta = newDep.montant - oldDep.montant;
+    if (delta !== 0) updateSolde('investissement', delta, label);
+  } else if (oldWasInvest && !newIsInvest) {
+    updateSolde('investissement', -oldDep.montant, 'Modification (changement de catégorie)');
+  } else if (!oldWasInvest && newIsInvest) {
+    updateSolde('investissement', newDep.montant, label);
+  }
 }
 
 function getAbonnementsMensuelTotal() {

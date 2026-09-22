@@ -18,14 +18,18 @@ function renderPrevisionnelMois() {
 
   const revenus = getRevenuMensuelEffectif(moisActuel);
   const chargesFixes = getAbonnementsMensuelTotal();
+  const budgetAlloue = getBudgetMensuelTotalMois(moisActuel);
   const depensesVariables = getTotalMois(moisActuel);
+  const previsionnel = revenus - chargesFixes - budgetAlloue;
   const resteAVivre = revenus - chargesFixes - depensesVariables;
 
   container.innerHTML = `
     <div class="previsionnel-line"><span>Revenus</span><span class="val text-green">+${formatEuro(revenus, 0)}</span></div>
     <div class="previsionnel-line"><span>Charges fixes (abonnements)</span><span class="val text-red">−${formatEuro(chargesFixes, 0)}</span></div>
-    <div class="previsionnel-line"><span>Dépenses variables</span><span class="val text-red">−${formatEuro(depensesVariables, 0)}</span></div>
-    <div class="previsionnel-line total"><span>Reste à vivre</span><span class="val ${resteAVivre >= 0 ? 'text-green' : 'text-red'}">${formatEuro(resteAVivre, 0)}</span></div>`;
+    <div class="previsionnel-line"><span>Budget alloué (catégories)</span><span class="val text-red">−${formatEuro(budgetAlloue, 0)}</span></div>
+    <div class="previsionnel-line total"><span>Prévisionnel (si budget respecté)</span><span class="val ${previsionnel >= 0 ? 'text-green' : 'text-red'}">${formatEuro(previsionnel, 0)}</span></div>
+    <div class="previsionnel-line" style="margin-top:8px; padding-top:10px; border-top:1px solid var(--border);"><span>Dépenses réelles à ce jour</span><span class="val text-red">−${formatEuro(depensesVariables, 0)}</span></div>
+    <div class="previsionnel-line total"><span>Reste à vivre (réel)</span><span class="val ${resteAVivre >= 0 ? 'text-green' : 'text-red'}">${formatEuro(resteAVivre, 0)}</span></div>`;
 }
 
 function renderSalaireBanner() {
@@ -139,7 +143,7 @@ function renderTransactionsMois() {
   }
 
   list.innerHTML = deps.map((d) => `
-    <div class="depense-row">
+    <div class="depense-row depense-row-clickable" data-id="${d.id}">
       <div class="depense-row-left">
         <div class="depense-icon">${CATEGORIES[d.categorie]?.icon || '📦'}</div>
         <div class="depense-info">
@@ -149,6 +153,13 @@ function renderTransactionsMois() {
       </div>
       <span class="depense-montant">-${formatEuro(d.montant)}</span>
     </div>`).join('');
+
+  list.querySelectorAll('[data-id]').forEach((row) => {
+    row.addEventListener('click', () => {
+      const dep = getDepenses().find((d) => d.id === row.dataset.id);
+      if (dep) openEditDepenseModal(dep, () => { renderHeaderSoldes(); window.refreshMensuel(); });
+    });
+  });
 }
 
 function openEditBudgetsModal() {

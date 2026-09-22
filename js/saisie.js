@@ -63,7 +63,7 @@ function validerDepense() {
   };
 
   saveDepense(depense);
-  updateSolde(activeCompte, -montant, CATEGORIES[activeCategorie].label);
+  applyDepenseEffect(depense);
 
   montantInput.value = '';
   descInput.value = '';
@@ -90,7 +90,7 @@ function refreshDernieresDepenses() {
   }
 
   list.innerHTML = deps.map((d) => `
-    <div class="depense-row" data-id="${d.id}">
+    <div class="depense-row depense-row-clickable" data-id="${d.id}">
       <div class="depense-row-left">
         <div class="depense-icon">${CATEGORIES[d.categorie]?.icon || '📦'}</div>
         <div class="depense-info">
@@ -99,24 +99,68 @@ function refreshDernieresDepenses() {
         </div>
       </div>
       <span class="depense-montant">-${formatEuro(d.montant)}</span>
-      <button class="depense-delete" data-delete="${d.id}">✕</button>
     </div>`).join('');
 
-  list.querySelectorAll('[data-delete]').forEach((btn) => {
-    btn.addEventListener('click', async () => {
-      const ok = await showConfirm('Supprimer cette dépense ?', { danger: true });
-      if (!ok) return;
-      const id = btn.dataset.delete;
-      const deps = getDepenses();
-      const dep = deps.find((d) => d.id === id);
-      if (dep) {
-        saveDepenses(deps.filter((d) => d.id !== id));
-        updateSolde(dep.compte, dep.montant, 'Suppression dépense');
-        renderHeaderSoldes();
-        showToast('Dépense supprimée');
-        refreshDernieresDepenses();
-      }
+  list.querySelectorAll('[data-id]').forEach((row) => {
+    row.addEventListener('click', () => {
+      const dep = getDepenses().find((d) => d.id === row.dataset.id);
+      if (dep) openEditDepenseModal(dep, () => { renderHeaderSoldes(); refreshDernieresDepenses(); });
     });
+  });
+}
+
+/* ---------- MODIFIER / SUPPRIMER UNE DÉPENSE (utilisé aussi par mensuel.js) ---------- */
+function openEditDepenseModal(dep, onDone) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal-sheet">
+      <div class="modal-title">Modifier la dépense</div>
+      <input type="number" class="modal-input" id="edit-dep-montant" value="${dep.montant}" step="0.01" min="0" inputmode="decimal" placeholder="Montant (€)">
+      <select class="modal-input" id="edit-dep-cat">
+        ${Object.entries(CATEGORIES).map(([key, c]) => `<option value="${key}" ${key === dep.categorie ? 'selected' : ''}>${c.icon} ${c.label}</option>`).join('')}
+      </select>
+      <select class="modal-input" id="edit-dep-compte">
+        <option value="cb" ${dep.compte === 'cb' ? 'selected' : ''}>💳 CB</option>
+        <option value="especes" ${dep.compte === 'especes' ? 'selected' : ''}>💵 Espèces</option>
+      </select>
+      <input type="text" class="modal-input" id="edit-dep-desc" value="${(dep.description || '').replace(/"/g, '&quot;')}" placeholder="Description (optionnel)">
+      <div class="modal-actions">
+        <button class="btn btn-danger" data-act="delete">Supprimer</button>
+        <button class="btn btn-outline" data-act="cancel">Annuler</button>
+      </div>
+      <button class="btn btn-primary btn-block" style="margin-top:10px;" data-act="ok">Enregistrer</button>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  const close = () => overlay.remove();
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  overlay.querySelector('[data-act="cancel"]').addEventListener('click', close);
+
+  overlay.querySelector('[data-act="delete"]').addEventListener('click', async () => {
+    const ok = await showConfirm('Supprimer cette dépense ?', { danger: true });
+    if (!ok) return;
+    reverseDepenseEffect(dep);
+    saveDepenses(getDepenses().filter((d) => d.id !== dep.id));
+    close();
+    showToast('Dépense supprimée');
+    if (onDone) onDone();
+  });
+
+  overlay.querySelector('[data-act="ok"]').addEventListener('click', () => {
+    const montant = parseFloat(document.getElementById('edit-dep-montant').value);
+    if (!montant || montant <= 0) { showToast('Montant invalide', 'error'); return; }
+    const categorie = document.getElementById('edit-dep-cat').value;
+    const compte = document.getElementById('edit-dep-compte').value;
+    const description = document.getElementById('edit-dep-desc').value.trim();
+
+    const updated = { ...dep, montant, categorie, compte, description };
+    applyDepenseEdit(dep, updated);
+    saveDepenses(getDepenses().map((d) => (d.id === dep.id ? updated : d)));
+
+    close();
+    showToast('Dépense modifiée ✓');
+    if (onDone) onDone();
   });
 }
 

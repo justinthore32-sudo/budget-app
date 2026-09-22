@@ -12,8 +12,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/main.css?v=3">
-<link rel="stylesheet" href="css/pages.css?v=3">
+<link rel="stylesheet" href="css/main.css?v=4">
+<link rel="stylesheet" href="css/pages.css?v=4">
 <script>
   /* Garde d'authentification — synchrone, avant tout rendu */
   if (!localStorage.getItem('budget-app-token')) {
@@ -245,8 +245,17 @@
       </div>
     </div>
 
+    <div class="card compte-card">
+      <div class="compte-label">🪙 Investissement</div>
+      <div id="solde-investissement" class="compte-solde mono">—</div>
+      <div class="compte-actions">
+        <button id="inv-sub">−</button>
+        <button id="inv-add">+</button>
+      </div>
+    </div>
+
     <div class="card patrimoine-card">
-      <div class="section-title" style="text-align:center;">Patrimoine liquide</div>
+      <div class="section-title" style="text-align:center;">Patrimoine total</div>
       <div id="patrimoine-total" class="patrimoine-val mono">—</div>
     </div>
 
@@ -263,6 +272,11 @@
     <div>
       <div class="section-title">Historique · Espèces</div>
       <div id="historique-especes" class="card"></div>
+    </div>
+
+    <div>
+      <div class="section-title">Historique · Investissement</div>
+      <div id="historique-investissement" class="card"></div>
     </div>
   </section>
 
@@ -358,15 +372,15 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-<script src="js/utils.js?v=3"></script>
-<script src="js/api.js?v=3"></script>
-<script src="js/auth.js?v=3"></script>
-<script src="js/app.js?v=3"></script>
-<script src="js/saisie.js?v=3"></script>
-<script src="js/mensuel.js?v=3"></script>
-<script src="js/annuel.js?v=3"></script>
-<script src="js/abonnements.js?v=3"></script>
-<script src="js/comptes.js?v=3"></script>
-<script src="js/analyse.js?v=3"></script>
+<script src="js/utils.js?v=4"></script>
+<script src="js/api.js?v=4"></script>
+<script src="js/auth.js?v=4"></script>
+<script src="js/app.js?v=4"></script>
+<script src="js/saisie.js?v=4"></script>
+<script src="js/mensuel.js?v=4"></script>
+<script src="js/annuel.js?v=4"></script>
+<script src="js/abonnements.js?v=4"></script>
+<script src="js/comptes.js?v=4"></script>
+<script src="js/analyse.js?v=4"></script>
 </body>
 </html>

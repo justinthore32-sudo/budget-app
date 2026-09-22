@@ -171,6 +171,8 @@
 .depense-meta { font-size: 11px; color: var(--text3); }
 .depense-montant { font-family: var(--font-mono); font-weight: 700; font-size: 14px; color: var(--text); flex-shrink: 0; }
 .depense-delete { color: var(--text3); font-size: 13px; padding: 4px 8px; flex-shrink: 0; }
+.depense-row-clickable { cursor: pointer; }
+.depense-row-clickable:active { background: var(--c2); }
 
 /* ---------- MENSUEL ---------- */
 .month-nav { display: flex; align-items: center; justify-content: space-between; }
