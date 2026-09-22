@@ -119,6 +119,21 @@ function initUserMenu() {
       menu.classList.remove('active');
     });
   }
+
+  const resetBtn = document.getElementById('user-menu-reset');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', async () => {
+      menu.classList.remove('active');
+      const typed = await showTextPrompt('Tape SUPPRIMER pour réinitialiser toutes les données (irréversible, pense à exporter avant)', { placeholder: 'SUPPRIMER' });
+      if (typed !== 'SUPPRIMER') {
+        if (typed) showToast('Réinitialisation annulée', 'error');
+        return;
+      }
+      resetAllData();
+      showToast('Données réinitialisées ✓');
+      setTimeout(() => window.location.reload(), 500);
+    });
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {

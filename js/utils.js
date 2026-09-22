@@ -510,6 +510,17 @@ function showTextPrompt(title, { type = 'text', placeholder = '', minLength = 0 
    % de budget et les objectifs manquaient à l'export). */
 const EXPORT_EXCLUDED_KEYS = ['budget_pin_hash', 'budget_last_export_at', 'budget_export_snooze_until'];
 
+/* Réinitialisation complète : supprime toutes les données budgétaires
+   de cet appareil (dépenses, comptes, budgets, salaires, objectifs,
+   PIN...) pour repartir de zéro sur l'écran de config initiale.
+   Irréversible — pas de sauvegarde serveur, seul un export préalable
+   permet de revenir en arrière. */
+function resetAllData() {
+  Object.keys(localStorage)
+    .filter((k) => k.startsWith('budget_'))
+    .forEach((k) => localStorage.removeItem(k));
+}
+
 function exportData() {
   const data = { exported_at: new Date().toISOString() };
   Object.keys(localStorage)
