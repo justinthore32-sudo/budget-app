@@ -88,7 +88,13 @@ function currentMonthKey() {
 const getDepensesMois = (mois) => getDepenses().filter((d) => d.date.startsWith(mois));
 const getTotalCategorieMois = (cat, mois) =>
   getDepensesMois(mois).filter((d) => d.categorie === cat).reduce((s, d) => s + d.montant, 0);
-const getTotalMois = (mois) => getDepensesMois(mois).reduce((s, d) => s + d.montant, 0);
+/* Exclut "investissement" : ce n'est pas de l'argent consommé/parti,
+   c'est un transfert vers un compte d'épargne (le compte investissement
+   se crédite en parallèle) — le compter comme dépense ferait baisser à
+   tort le "reste à vivre" et gonflerait le total dépensé mensuel/annuel
+   chaque fois que l'utilisateur met de l'argent de côté. */
+const getTotalMois = (mois) =>
+  getDepensesMois(mois).filter((d) => d.categorie !== 'investissement').reduce((s, d) => s + d.montant, 0);
 
 function saveDepense(dep) {
   const deps = getDepenses();
