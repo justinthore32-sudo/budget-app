@@ -52,7 +52,7 @@ function buildOnboardingAboFields() {
     <label style="display:flex; align-items:center; gap:10px;">
       <input type="checkbox" data-onboard-abo="${i}" checked>
       <span style="flex:1; font-size:13px; color:var(--text2);">${a.nom} · ${CATEGORIES[a.categorie].label}</span>
-      <span class="mono" style="font-size:13px; color:var(--text);">${formatEuro(a.montant, 0)}</span>
+      <input type="number" class="field-input" style="width:80px; text-align:right;" data-onboard-abo-montant="${i}" value="${a.montant}" inputmode="decimal" step="0.01" min="0">
     </label>`).join('');
 }
 
@@ -102,13 +102,19 @@ function initOnboarding() {
     const abonnements = [];
     overlay.querySelectorAll('[data-onboard-abo]').forEach((input) => {
       if (input.checked) {
-        const src = DEFAULT_ABONNEMENTS[parseInt(input.dataset.onboardAbo, 10)];
-        abonnements.push({ id: uid('abo'), nom: src.nom, montant: src.montant, categorie: src.categorie, actif: true, created_at: Date.now() });
+        const idx = parseInt(input.dataset.onboardAbo, 10);
+        const src = DEFAULT_ABONNEMENTS[idx];
+        const montantInput = overlay.querySelector(`[data-onboard-abo-montant="${idx}"]`);
+        const montant = montantInput ? (parseFloat(montantInput.value) || 0) : src.montant;
+        if (montant > 0) abonnements.push({ id: uid('abo'), nom: src.nom, montant, categorie: src.categorie, frequence: 'mensuel', actif: true, created_at: Date.now() });
       }
     });
 
+    /* Ne pas créditer immédiatement le salaire ici : la première
+       confirmation se fait sur la page Mensuel (bannière "Renseigner"),
+       qui propose alors de créditer un compte. Le pré-remplir ici
+       court-circuiterait ce choix pour le tout premier mois. */
     saveParams({ prenom, revenus, salaire_type: salaire, mois_debut: currentMonthKey() });
-    saveSalaireMois(currentMonthKey(), salaire);
     saveBudgetPrevisionnel(budgetPrevisionnel);
     saveAbonnements(abonnements);
     saveComptes({ cb: { solde: soldeCb, historique: [] }, especes: { solde: soldeEsp, historique: [] } });
