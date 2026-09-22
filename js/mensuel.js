@@ -45,10 +45,23 @@ function renderSalaireBanner() {
     : `<span>💰 Quel est ton salaire pour ${formatMonthLabel(moisActuel)} ?</span><button id="btn-edit-salaire-mois" class="btn-expand" style="color:var(--green);">Renseigner</button>`;
 
   document.getElementById('btn-edit-salaire-mois').addEventListener('click', async () => {
+    const premiereFois = saisi == null;
     const montant = await showAmountPrompt(`Salaire — ${formatMonthLabel(moisActuel)}`, { placeholder: String(getSalaireType() || '0.00') });
     if (!montant) return;
     saveSalaireMois(moisActuel, montant);
+
+    /* Le salaire n'est qu'un chiffre prévisionnel tant qu'il n'est pas
+       crédité sur un vrai compte — sinon un virement vers Investissement
+       débite un CB qui n'a jamais reçu cet argent. On ne propose le
+       crédit qu'à la première saisie du mois (pas à chaque correction,
+       pour éviter de créditer deux fois). */
+    if (premiereFois) {
+      const compte = await showCompteChoicePrompt(`Créditer ces ${formatEuro(montant, 0)} sur un compte ?`);
+      if (compte) updateSolde(compte, montant, `Salaire — ${formatMonthLabel(moisActuel)}`);
+    }
+
     showToast('Salaire enregistré ✓');
+    renderHeaderSoldes();
     window.refreshMensuel();
   });
 }

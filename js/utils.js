@@ -410,6 +410,31 @@ function showConfirm(message, { danger = false } = {}) {
   });
 }
 
+/* Choix du compte à créditer (ou aucun) — utilisé quand un revenu réel
+   (salaire...) doit se traduire en argent effectivement disponible sur
+   un compte, pas juste dans le prévisionnel. */
+function showCompteChoicePrompt(title) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay center';
+    overlay.innerHTML = `
+      <div class="modal-sheet">
+        <div class="modal-title">${title}</div>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <button class="btn btn-outline" data-choice="cb">💳 Carte bancaire</button>
+          <button class="btn btn-outline" data-choice="especes">💵 Espèces</button>
+          <button class="btn-expand" data-choice="none" style="color:var(--text3); margin-top:4px;">Non, juste prévisionnel</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    const close = (value) => { overlay.remove(); resolve(value); };
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(null); });
+    overlay.querySelectorAll('[data-choice]').forEach((btn) => {
+      btn.addEventListener('click', () => close(btn.dataset.choice === 'none' ? null : btn.dataset.choice));
+    });
+  });
+}
+
 function showAmountPrompt(title, { placeholder = '0.00' } = {}) {
   return new Promise((resolve) => {
     const overlay = document.createElement('div');
