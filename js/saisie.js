@@ -99,6 +99,7 @@ function refreshDernieresDepenses() {
         </div>
       </div>
       <span class="depense-montant">-${formatEuro(d.montant)}</span>
+      <span class="abo-edit-icon">✏️</span>
     </div>`).join('');
 
   list.querySelectorAll('[data-id]').forEach((row) => {

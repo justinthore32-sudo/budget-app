@@ -4,13 +4,14 @@
    lancement, header (date + soldes).
    ============================================ */
 
-const PAGES = ['saisie', 'mensuel', 'annuel', 'abonnements', 'comptes', 'analyse'];
+const PAGES = ['saisie', 'mensuel', 'annuel', 'abonnements', 'comptes', 'objectif', 'analyse'];
 const PAGE_REFRESH = {
   saisie: () => window.refreshSaisie && window.refreshSaisie(),
   mensuel: () => window.refreshMensuel && window.refreshMensuel(),
   annuel: () => window.refreshAnnuel && window.refreshAnnuel(),
   abonnements: () => window.refreshAbonnements && window.refreshAbonnements(),
   comptes: () => window.refreshComptes && window.refreshComptes(),
+  objectif: () => window.refreshObjectif && window.refreshObjectif(),
   analyse: () => window.refreshAnalyse && window.refreshAnalyse()
 };
 

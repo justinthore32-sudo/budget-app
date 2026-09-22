@@ -12,8 +12,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/main.css?v=10">
-<link rel="stylesheet" href="css/pages.css?v=10">
+<link rel="stylesheet" href="css/main.css?v=11">
+<link rel="stylesheet" href="css/pages.css?v=11">
 <script>
   /* Garde d'authentification — synchrone, avant tout rendu */
   if (!localStorage.getItem('budget-app-token')) {
@@ -245,7 +245,6 @@
           <button id="cb-sub">−</button>
           <button id="cb-add">+</button>
         </div>
-        <div id="objectif-cb" class="objectif-wrap"></div>
       </div>
       <div class="card compte-card">
         <div class="compte-label">💵 Espèces</div>
@@ -254,7 +253,6 @@
           <button id="esp-sub">−</button>
           <button id="esp-add">+</button>
         </div>
-        <div id="objectif-especes" class="objectif-wrap"></div>
       </div>
     </div>
 
@@ -265,32 +263,33 @@
         <button id="inv-sub">−</button>
         <button id="inv-add">+</button>
       </div>
-      <div id="objectif-investissement" class="objectif-wrap"></div>
     </div>
 
     <div class="card patrimoine-card">
       <div class="section-title" style="text-align:center;">Patrimoine total</div>
       <div id="patrimoine-total" class="patrimoine-val mono">—</div>
+      <p class="text3" style="text-align:center; font-size:11px; margin-top:6px;">CB + Espèces + Investissement, en temps réel</p>
     </div>
 
     <div class="card">
       <div class="section-title">Évolution solde CB — 30 jours</div>
       <div class="chart-wrap"><canvas id="comptes-line-chart"></canvas></div>
     </div>
+  </section>
 
-    <div>
-      <div class="section-title">Historique · Carte bancaire</div>
-      <div id="historique-cb" class="card"></div>
+  <!-- ============ PAGE OBJECTIFS ============ -->
+  <section id="page-objectif" class="page">
+    <div class="card">
+      <div class="section-title" style="margin-bottom:0;">💳 Carte bancaire</div>
+      <div id="objectif-cb" class="objectif-wrap"></div>
     </div>
-
-    <div>
-      <div class="section-title">Historique · Espèces</div>
-      <div id="historique-especes" class="card"></div>
+    <div class="card">
+      <div class="section-title" style="margin-bottom:0;">💵 Espèces</div>
+      <div id="objectif-especes" class="objectif-wrap"></div>
     </div>
-
-    <div>
-      <div class="section-title">Historique · Investissement</div>
-      <div id="historique-investissement" class="card"></div>
+    <div class="card">
+      <div class="section-title" style="margin-bottom:0;">🪙 Investissement</div>
+      <div id="objectif-investissement" class="objectif-wrap"></div>
     </div>
   </section>
 
@@ -328,6 +327,9 @@
   </button>
   <button id="nav-comptes" class="nav-item" onclick="showPage('comptes')">
     <span class="nav-icon">💳</span><span class="nav-label">Comptes</span>
+  </button>
+  <button id="nav-objectif" class="nav-item" onclick="showPage('objectif')">
+    <span class="nav-icon">🎯</span><span class="nav-label">Objectif</span>
   </button>
   <button id="nav-analyse" class="nav-item" onclick="showPage('analyse')">
     <span class="nav-icon">🤖</span><span class="nav-label">IA</span>
@@ -407,15 +409,15 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-<script src="js/utils.js?v=10"></script>
-<script src="js/api.js?v=10"></script>
-<script src="js/auth.js?v=10"></script>
-<script src="js/app.js?v=10"></script>
-<script src="js/saisie.js?v=10"></script>
-<script src="js/mensuel.js?v=10"></script>
-<script src="js/annuel.js?v=10"></script>
-<script src="js/abonnements.js?v=10"></script>
-<script src="js/comptes.js?v=10"></script>
-<script src="js/analyse.js?v=10"></script>
+<script src="js/utils.js?v=11"></script>
+<script src="js/api.js?v=11"></script>
+<script src="js/auth.js?v=11"></script>
+<script src="js/app.js?v=11"></script>
+<script src="js/saisie.js?v=11"></script>
+<script src="js/mensuel.js?v=11"></script>
+<script src="js/annuel.js?v=11"></script>
+<script src="js/abonnements.js?v=11"></script>
+<script src="js/comptes.js?v=11"></script>
+<script src="js/analyse.js?v=11"></script>
 </body>
 </html>

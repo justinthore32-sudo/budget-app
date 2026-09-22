@@ -69,6 +69,7 @@ function renderAbonnements() {
       </div>
       <span class="abo-montant">${formatEuro(a.montant, 2)}${isAnnuel ? '/an' : ''}</span>
       <div class="toggle-switch ${a.actif ? 'on' : ''}" data-toggle="${a.id}"></div>
+      <span class="abo-edit-icon">✏️</span>
     </div>`;
   }).join('');
 
@@ -169,6 +170,7 @@ function renderRevenus() {
         <div class="abo-nom">${r.nom}</div>
       </div>
       <span class="abo-montant text-green">+${formatEuro(r.montant, 2)}</span>
+      <span class="abo-edit-icon">✏️</span>
     </div>`).join('');
 
   list.querySelectorAll('.abo-row-clickable').forEach((row) => {

@@ -24,41 +24,7 @@ async function ajusterSolde(compte, type) {
   showToast('Solde mis à jour ✓');
   renderComptesCards();
   renderHeaderSoldes();
-  renderHistorique();
   renderComptesLineChart();
-}
-
-function renderHistorique() {
-  const comptes = getComptes();
-  ['cb', 'especes', 'investissement'].forEach((compte) => {
-    const list = document.getElementById(`historique-${compte}`);
-    if (!list) return;
-
-    /* `historique` du compte capture déjà TOUS les mouvements (dépenses
-       ET ajustements manuels, via updateSolde appelé dans les deux cas)
-       — inutile (et faux : ça doublait chaque ligne) de re-fusionner
-       avec les dépenses brutes ici. */
-    const all = (comptes[compte].historique || [])
-      .map((h) => ({ date: h.date, montant: h.montant, label: h.label }))
-      .sort((a, b) => new Date(b.date) - new Date(a.date))
-      .slice(0, 20);
-
-    if (all.length === 0) {
-      list.innerHTML = `<div class="empty-state"><div class="empty-icon">📄</div><p>Aucun mouvement.</p></div>`;
-      return;
-    }
-
-    list.innerHTML = all.map((h) => `
-      <div class="depense-row">
-        <div class="depense-row-left">
-          <div class="depense-info">
-            <span class="depense-desc">${h.label || 'Mouvement'}</span>
-            <span class="depense-meta">${formatDateShort(h.date)}</span>
-          </div>
-        </div>
-        <span class="depense-montant ${h.montant >= 0 ? 'text-green' : ''}">${h.montant >= 0 ? '+' : ''}${formatEuro(h.montant)}</span>
-      </div>`).join('');
-  });
 }
 
 function renderObjectifs() {
@@ -195,9 +161,11 @@ function renderComptesLineChart() {
 
 window.refreshComptes = function refreshComptes() {
   renderComptesCards();
-  renderObjectifs();
-  renderHistorique();
   renderComptesLineChart();
+};
+
+window.refreshObjectif = function refreshObjectif() {
+  renderObjectifs();
 };
 
 document.addEventListener('DOMContentLoaded', () => {
