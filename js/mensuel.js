@@ -106,7 +106,7 @@ function renderDonut() {
       labels: entries.map((e) => CATEGORIES[e.cat].label),
       datasets: [{
         data: entries.map((e) => e.total),
-        backgroundColor: entries.map((e) => getComputedStyle(document.documentElement).getPropertyValue(`--cat-${e.cat}`).trim() || '#64748b'),
+        backgroundColor: entries.map((e) => resolveCategoryColor(e.cat)),
         borderColor: '#0b0f1a',
         borderWidth: 2
       }]
@@ -191,6 +191,7 @@ function openEditBudgetsModal() {
             <input type="number" class="field-input" style="width:100px; text-align:right;" data-edit-budget-cat="${cat}" value="${Math.round(budget[cat] || 0)}" inputmode="decimal" step="0.01" min="0">
           </div>`).join('')}
       </div>
+      <button type="button" class="btn btn-outline btn-block" data-act="add-cat" style="margin-bottom:14px;">+ Ajouter une catégorie</button>
       <div class="modal-actions">
         <button class="btn btn-outline" data-act="cancel">Annuler</button>
         <button class="btn btn-primary" data-act="ok">Enregistrer</button>
@@ -200,6 +201,16 @@ function openEditBudgetsModal() {
 
   overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
   overlay.querySelector('[data-act="cancel"]').addEventListener('click', () => overlay.remove());
+  overlay.querySelector('[data-act="add-cat"]').addEventListener('click', async () => {
+    const label = await showTextPrompt('Nom de la nouvelle catégorie', { placeholder: 'Ex : Enfants, Animaux…' });
+    if (!label) return;
+    const icon = await showTextPrompt('Emoji pour cette catégorie (optionnel)', { placeholder: '📁' });
+    const key = addCustomCategory(label, icon);
+    if (!key) { showToast('Cette catégorie existe déjà', 'error'); return; }
+    showToast('Catégorie ajoutée ✓');
+    overlay.remove();
+    openEditBudgetsModal();
+  });
   overlay.querySelector('[data-act="ok"]').addEventListener('click', () => {
     overlay.querySelectorAll('[data-edit-budget-cat]').forEach((input) => {
       const montant = parseFloat(input.value) || 0;

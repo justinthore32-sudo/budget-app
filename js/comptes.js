@@ -67,7 +67,9 @@ function openObjectifModal(compte) {
   overlay.innerHTML = `
     <div class="modal-sheet">
       <div class="modal-title">Objectif — ${COMPTE_LABELS[compte]}</div>
-      <input type="number" class="modal-input" id="objectif-montant" placeholder="Montant cible (€)" inputmode="decimal" step="0.01" min="0" value="${existing ? existing.montant : ''}">
+      <label style="display:block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--text2); margin-bottom:6px;">Combien veux-tu avoir sur ce compte ?</label>
+      <input type="number" class="modal-input" id="objectif-montant" placeholder="Ex : 5000" inputmode="decimal" step="0.01" min="0" value="${existing ? existing.montant : ''}">
+      <label style="display:block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--text2); margin-bottom:6px;">D'ici quel mois ?</label>
       <input type="month" class="modal-input" id="objectif-echeance" value="${existing ? existing.echeance : ''}">
       <div class="modal-actions">
         ${existing ? '<button class="btn btn-danger" data-act="remove">Supprimer</button>' : '<button class="btn btn-outline" data-act="cancel">Annuler</button>'}

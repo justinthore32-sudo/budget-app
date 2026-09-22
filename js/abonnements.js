@@ -273,6 +273,8 @@ function ajouterAbonnement(e) {
 }
 
 window.refreshAbonnements = function refreshAbonnements() {
+  const catSelect = document.getElementById('abo-cat');
+  if (catSelect) catSelect.innerHTML = buildAboCategorieSelect();
   renderRevenus();
   renderAbonnements();
   renderPourcentageCard();

@@ -17,6 +17,52 @@ const CATEGORIES = {
   autres: { label: 'Autres', icon: '📦', color: 'var(--cat-autres)' }
 };
 
+/* ---------- CATÉGORIES PERSONNALISÉES ----------
+   Fusionnées dans CATEGORIES au chargement, pour apparaître partout
+   (Saisie, Mensuel, Annuel, Abonnements) sans toucher le reste du code
+   qui référence CATEGORIES directement. Couleur en hex littéral (pas
+   une var CSS comme les catégories intégrées), palette tournante. */
+const CUSTOM_CATEGORY_PALETTE = ['#f472b6', '#fb923c', '#a3e635', '#22d3ee', '#818cf8', '#e879f9', '#facc15', '#4ade80'];
+
+function getCustomCategories() {
+  return JSON.parse(localStorage.getItem('budget_categories_custom') || '{}');
+}
+
+function loadCustomCategories() {
+  Object.assign(CATEGORIES, getCustomCategories());
+}
+loadCustomCategories();
+
+function slugifyCategoryName(label) {
+  return label.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+}
+
+function addCustomCategory(label, icon) {
+  const key = slugifyCategoryName(label) || uid('cat');
+  if (CATEGORIES[key]) return null;
+  const custom = getCustomCategories();
+  const color = CUSTOM_CATEGORY_PALETTE[Object.keys(custom).length % CUSTOM_CATEGORY_PALETTE.length];
+  const entry = { label, icon: icon || '📁', color };
+  custom[key] = entry;
+  localStorage.setItem('budget_categories_custom', JSON.stringify(custom));
+  CATEGORIES[key] = entry;
+  return key;
+}
+
+/* Résout la couleur d'une catégorie en valeur hex utilisable par
+   Chart.js (qui dessine sur canvas et ne comprend pas var(--x)) — les
+   catégories intégrées passent par la variable CSS, les catégories
+   personnalisées sont déjà en hex littéral. */
+function resolveCategoryColor(cat) {
+  const color = CATEGORIES[cat]?.color || '#64748b';
+  if (color.startsWith('var(')) {
+    const varName = color.slice(4, -1).trim();
+    return getComputedStyle(document.documentElement).getPropertyValue(varName).trim() || '#64748b';
+  }
+  return color;
+}
+
 const DEFAULT_BUDGET_PREVISIONNEL = {
   alimentation: 300, transport: 120, logement: 500, loisirs: 150,
   sport: 50, shopping: 100, sante: 50, investissement: 100, autres: 100

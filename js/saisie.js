@@ -8,13 +8,22 @@ let activeCategorie = 'alimentation';
 
 function buildCatButtons() {
   const grid = document.getElementById('cat-select-grid');
-  if (!grid || grid.dataset.built) return;
-  grid.innerHTML = Object.entries(CATEGORIES).map(([key, cat]) => `
+  if (!grid) return;
+  /* Rebâti à chaque fois (pas juste une fois) : une catégorie peut être
+     ajoutée à tout moment depuis Mensuel, et cette grille doit la
+     refléter sans attendre un rechargement complet de la page. */
+  const keys = Object.keys(CATEGORIES);
+  if (grid.dataset.built === keys.join(',')) return;
+
+  grid.innerHTML = keys.map((key) => {
+    const cat = CATEGORIES[key];
+    return `
     <button type="button" class="cat-btn ${key === activeCategorie ? 'active' : ''}" data-cat="${key}" style="--cat-color:${cat.color}">
       <span class="cat-emoji">${cat.icon}</span>
       <span>${cat.label}</span>
-    </button>`).join('');
-  grid.dataset.built = '1';
+    </button>`;
+  }).join('');
+  grid.dataset.built = keys.join(',');
 
   grid.querySelectorAll('.cat-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
