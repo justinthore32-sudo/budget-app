@@ -247,6 +247,8 @@ table.recap-table td.mono { font-family: var(--font-mono); }
 .toggle-switch.on::after { transform: translateX(16px); background: var(--green); }
 
 .abo-delete { color: var(--text3); font-size: 16px; padding: 4px 6px; flex-shrink: 0; }
+.abo-row-clickable { cursor: pointer; }
+.abo-row-clickable:active { background: var(--c2); }
 
 /* ---------- COMPTES ---------- */
 .comptes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -258,6 +260,12 @@ table.recap-table td.mono { font-family: var(--font-mono); }
 
 .patrimoine-card { text-align: center; }
 .patrimoine-val { font-family: var(--font-mono); font-weight: 700; font-size: 28px; color: var(--green); }
+
+.objectif-wrap { margin-top: 12px; text-align: left; }
+.objectif-link { font-size: 11.5px; color: var(--text3); width: 100%; text-align: center; }
+.objectif-block { display: flex; flex-direction: column; gap: 6px; }
+.objectif-header { display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: var(--text2); gap: 6px; }
+.objectif-sub { font-size: 10.5px; color: var(--text3); }
 
 /* ---------- ANALYSE IA ---------- */
 .analyse-intro { text-align: center; padding: 20px 10px; }

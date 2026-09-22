@@ -123,11 +123,66 @@ function boot() {
   showPage('saisie');
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  if (!isOnboarded()) {
-    initOnboarding();
+/* Verrou PIN local : protection légère contre un accès casuel si le
+   téléphone est déverrouillé/laissé sans surveillance. Pas une seconde
+   authentification serveur — la récupération passe par le mot de passe
+   du compte (déjà un secret que l'utilisateur doit connaître), jamais
+   par un effacement des données locales. */
+function initPinLock(onUnlocked) {
+  const overlay = document.getElementById('pin-lock-overlay');
+  if (!overlay || !getPinHash()) {
+    onUnlocked();
     return;
   }
-  migrateSalaireModel();
-  boot();
+
+  overlay.classList.remove('hidden');
+  const input = document.getElementById('pin-lock-input');
+  const errorEl = document.getElementById('pin-lock-error');
+  const recovery = document.getElementById('pin-lock-recovery');
+  setTimeout(() => input.focus(), 100);
+
+  const attempt = async () => {
+    if (await verifyPin(input.value)) {
+      overlay.remove();
+      onUnlocked();
+    } else {
+      errorEl.textContent = 'Code incorrect';
+      errorEl.classList.remove('hidden');
+      input.value = '';
+      input.focus();
+    }
+  };
+  document.getElementById('pin-lock-submit').addEventListener('click', attempt);
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') attempt(); });
+
+  document.getElementById('pin-lock-forgot').addEventListener('click', () => {
+    recovery.classList.remove('hidden');
+  });
+
+  document.getElementById('pin-recovery-submit').addEventListener('click', async () => {
+    const username = document.getElementById('pin-recovery-username').value.trim();
+    const password = document.getElementById('pin-recovery-password').value;
+    const recoveryError = document.getElementById('pin-recovery-error');
+    recoveryError.classList.add('hidden');
+    try {
+      await login(username, password);
+      clearPin();
+      overlay.remove();
+      onUnlocked();
+    } catch (err) {
+      recoveryError.textContent = err.message;
+      recoveryError.classList.remove('hidden');
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initPinLock(() => {
+    if (!isOnboarded()) {
+      initOnboarding();
+      return;
+    }
+    migrateSalaireModel();
+    boot();
+  });
 });

@@ -164,11 +164,39 @@ function openEditDepenseModal(dep, onDone) {
   });
 }
 
+function renderExportReminder() {
+  const banner = document.getElementById('export-reminder-banner');
+  if (!banner) return;
+
+  if (!shouldShowExportReminder()) {
+    banner.classList.add('hidden');
+    return;
+  }
+
+  banner.classList.remove('hidden');
+  banner.innerHTML = `
+    <span>💾 Pense à exporter tes données (sauvegarde locale)</span>
+    <div style="display:flex; gap:8px;">
+      <button id="btn-export-now" class="btn-expand" style="color:var(--green);">Exporter</button>
+      <button id="btn-export-snooze" class="btn-expand" style="color:var(--text3);">Plus tard</button>
+    </div>`;
+
+  document.getElementById('btn-export-now').addEventListener('click', () => {
+    exportData();
+    renderExportReminder();
+  });
+  document.getElementById('btn-export-snooze').addEventListener('click', () => {
+    snoozeExportReminder();
+    renderExportReminder();
+  });
+}
+
 window.refreshSaisie = function refreshSaisie() {
   buildCatButtons();
   initCompteToggle();
   renderHeaderSoldes();
   refreshDernieresDepenses();
+  renderExportReminder();
 };
 
 document.addEventListener('DOMContentLoaded', () => {

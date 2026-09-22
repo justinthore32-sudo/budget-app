@@ -12,8 +12,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/main.css?v=4">
-<link rel="stylesheet" href="css/pages.css?v=4">
+<link rel="stylesheet" href="css/main.css?v=6">
+<link rel="stylesheet" href="css/pages.css?v=6">
 <script>
   /* Garde d'authentification — synchrone, avant tout rendu */
   if (!localStorage.getItem('budget-app-token')) {
@@ -45,6 +45,9 @@
         <div id="user-menu-name" class="user-menu-name">Bonjour</div>
         <a id="user-menu-admin" href="admin.html" class="hidden">⚙️ Gestion des comptes</a>
         <button id="user-menu-password">🔑 Changer mon mot de passe</button>
+        <button id="user-menu-pin-set" class="hidden">🔒 Activer le code PIN</button>
+        <button id="user-menu-pin-change" class="hidden">✏️ Modifier le code PIN</button>
+        <button id="user-menu-pin-remove" class="hidden">🔓 Désactiver le code PIN</button>
         <button id="user-menu-export">⬇️ Exporter mes données</button>
         <label style="cursor:pointer;">
           📤 Importer des données
@@ -60,6 +63,8 @@
 
   <!-- ============ PAGE 1 — SAISIE ============ -->
   <section id="page-saisie" class="page">
+    <div id="export-reminder-banner" class="card salaire-banner hidden" style="border-color:var(--gold-d);"></div>
+
     <div class="montant-input">
       <input type="number" id="montant" placeholder="0.00" inputmode="decimal" step="0.01" min="0">
       <span class="currency">€</span>
@@ -209,7 +214,12 @@
     <div id="abo-form-wrap" class="card hidden" style="display:flex; flex-direction:column; gap:10px;">
       <form id="abo-form" style="display:flex; flex-direction:column; gap:10px;">
         <input type="text" id="abo-nom" class="field-input" placeholder="Nom de l'abonnement" required>
-        <input type="number" id="abo-montant" class="field-input" placeholder="Montant mensuel (€)" inputmode="decimal" step="0.01" min="0" required>
+        <select id="abo-frequence" class="field-input">
+          <option value="mensuel">Mensuel</option>
+          <option value="annuel">Annuel (assurance, impôts…)</option>
+        </select>
+        <input type="number" id="abo-montant" class="field-input" placeholder="Montant (€)" inputmode="decimal" step="0.01" min="0" required>
+        <select id="abo-mois-prelevement" class="field-input hidden"></select>
         <select id="abo-cat" class="field-input"></select>
         <div class="modal-actions">
           <button type="button" id="btn-cancel-abo-form" class="btn btn-outline">Annuler</button>
@@ -234,6 +244,7 @@
           <button id="cb-sub">−</button>
           <button id="cb-add">+</button>
         </div>
+        <div id="objectif-cb" class="objectif-wrap"></div>
       </div>
       <div class="card compte-card">
         <div class="compte-label">💵 Espèces</div>
@@ -242,6 +253,7 @@
           <button id="esp-sub">−</button>
           <button id="esp-add">+</button>
         </div>
+        <div id="objectif-especes" class="objectif-wrap"></div>
       </div>
     </div>
 
@@ -252,6 +264,7 @@
         <button id="inv-sub">−</button>
         <button id="inv-add">+</button>
       </div>
+      <div id="objectif-investissement" class="objectif-wrap"></div>
     </div>
 
     <div class="card patrimoine-card">
@@ -320,6 +333,27 @@
   </button>
 </nav>
 
+<!-- ============ VERROUILLAGE PIN ============ -->
+<div id="pin-lock-overlay" class="onboard-overlay hidden" style="display:flex; align-items:center; justify-content:center;">
+  <div style="text-align:center; padding:20px; width:100%; max-width:320px;">
+    <div style="font-size:32px;">🔒</div>
+    <h1 style="font-size:18px; margin-top:8px;">Code PIN</h1>
+    <p class="text3" style="font-size:12px; margin:6px 0 20px;">Entre ton code pour continuer</p>
+    <input type="password" inputmode="numeric" pattern="[0-9]*" id="pin-lock-input" class="field-input" style="text-align:center; font-size:22px; letter-spacing:8px;" maxlength="8">
+    <div id="pin-lock-error" class="login-error hidden" style="margin-top:10px;"></div>
+    <button id="pin-lock-submit" class="btn btn-primary btn-block" style="margin-top:16px;">Déverrouiller</button>
+    <button id="pin-lock-forgot" class="btn-expand" style="margin-top:14px; color:var(--text3); font-size:12px;">Code oublié ?</button>
+
+    <div id="pin-lock-recovery" class="hidden" style="margin-top:16px; display:flex; flex-direction:column; gap:10px; text-align:left;">
+      <p class="text3" style="font-size:11.5px;">Confirme tes identifiants de connexion pour réinitialiser le code PIN (tes données restent intactes).</p>
+      <input type="text" id="pin-recovery-username" class="field-input" placeholder="Nom d'utilisateur" autocapitalize="none">
+      <input type="password" id="pin-recovery-password" class="field-input" placeholder="Mot de passe">
+      <div id="pin-recovery-error" class="login-error hidden"></div>
+      <button id="pin-recovery-submit" class="btn btn-outline">Réinitialiser le PIN</button>
+    </div>
+  </div>
+</div>
+
 <!-- ============ ONBOARDING (premier lancement) ============ -->
 <div id="onboarding-overlay" class="onboard-overlay hidden">
   <div class="onboard-inner">
@@ -372,15 +406,15 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-<script src="js/utils.js?v=4"></script>
-<script src="js/api.js?v=4"></script>
-<script src="js/auth.js?v=4"></script>
-<script src="js/app.js?v=4"></script>
-<script src="js/saisie.js?v=4"></script>
-<script src="js/mensuel.js?v=4"></script>
-<script src="js/annuel.js?v=4"></script>
-<script src="js/abonnements.js?v=4"></script>
-<script src="js/comptes.js?v=4"></script>
-<script src="js/analyse.js?v=4"></script>
+<script src="js/utils.js?v=6"></script>
+<script src="js/api.js?v=6"></script>
+<script src="js/auth.js?v=6"></script>
+<script src="js/app.js?v=6"></script>
+<script src="js/saisie.js?v=6"></script>
+<script src="js/mensuel.js?v=6"></script>
+<script src="js/annuel.js?v=6"></script>
+<script src="js/abonnements.js?v=6"></script>
+<script src="js/comptes.js?v=6"></script>
+<script src="js/analyse.js?v=6"></script>
 </body>
 </html>

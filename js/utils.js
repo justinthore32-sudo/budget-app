@@ -152,8 +152,20 @@ function applyDepenseEdit(oldDep, newDep) {
   }
 }
 
+/* Un abonnement "annuel" (assurance, impôts...) est lissé sur 12 mois
+   dans les totaux mensuels (sinking fund), même si le prélèvement réel
+   n'a lieu qu'une fois par an — sinon il ferait s'effondrer le "reste à
+   vivre" du seul mois où il tombe alors qu'il était prévisible. */
 function getAbonnementsMensuelTotal() {
-  return getAbonnements().filter((a) => a.actif).reduce((s, a) => s + a.montant, 0);
+  return getAbonnements().filter((a) => a.actif).reduce((s, a) => {
+    return s + (a.frequence === 'annuel' ? a.montant / 12 : a.montant);
+  }, 0);
+}
+
+function getAbonnementsAnnuelReelTotal() {
+  return getAbonnements().filter((a) => a.actif).reduce((s, a) => {
+    return s + (a.frequence === 'annuel' ? a.montant : a.montant * 12);
+  }, 0);
 }
 
 function getBudgetMensuelTotal() {
@@ -271,6 +283,72 @@ function migrateSalaireModel() {
 /* ---------- REVENU EFFECTIF DU MOIS (salaire variable + autres revenus fixes) ---------- */
 function getRevenuMensuelEffectif(mois) {
   return getSalaireEffectifMois(mois) + getTotalRevenus();
+}
+
+/* ---------- OBJECTIFS D'ÉPARGNE (par compte) ---------- */
+const getObjectifs = () => JSON.parse(localStorage.getItem('budget_objectifs') || '{}');
+function saveObjectifCompte(compte, objectif) {
+  const objectifs = getObjectifs();
+  if (objectif) objectifs[compte] = objectif;
+  else delete objectifs[compte];
+  localStorage.setItem('budget_objectifs', JSON.stringify(objectifs));
+}
+function getObjectifCompte(compte) {
+  return getObjectifs()[compte] || null;
+}
+
+/* Nombre de mois entre aujourd'hui et une échéance 'YYYY-MM' (mini 1
+   pour éviter une division par zéro si l'échéance est ce mois-ci). */
+function moisRestantsJusqua(echeance) {
+  const [ey, em] = echeance.split('-').map(Number);
+  const now = new Date();
+  const months = (ey - now.getFullYear()) * 12 + (em - 1 - now.getMonth());
+  return Math.max(1, months);
+}
+
+/* ---------- RAPPEL D'EXPORT (sauvegarde locale) ----------
+   100% localStorage = confidentialité totale, mais aussi risque de
+   perte totale si le téléphone est perdu/réinitialisé. Un rappel léger
+   plutôt qu'une synchronisation serveur, pour ne pas trahir le choix
+   de vie privée du cahier des charges. */
+function getLastExportAt() {
+  const v = localStorage.getItem('budget_last_export_at');
+  return v ? parseInt(v, 10) : null;
+}
+function markExported() {
+  localStorage.setItem('budget_last_export_at', String(Date.now()));
+}
+function getExportSnoozeUntil() {
+  const v = localStorage.getItem('budget_export_snooze_until');
+  return v ? parseInt(v, 10) : 0;
+}
+function snoozeExportReminder(days = 7) {
+  localStorage.setItem('budget_export_snooze_until', String(Date.now() + days * 24 * 60 * 60 * 1000));
+}
+function shouldShowExportReminder() {
+  const last = getLastExportAt();
+  const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+  const neverOrOld = !last || (Date.now() - last > THIRTY_DAYS);
+  return neverOrOld && Date.now() > getExportSnoozeUntil() && getDepenses().length > 0;
+}
+
+/* ---------- CODE PIN LOCAL (verrouillage rapide) ----------
+   Protection légère côté client : dissuade un accès casuel si le
+   téléphone est déverrouillé/laissé sans surveillance. Ce n'est PAS
+   une seconde authentification cryptographique côté serveur — juste un
+   verrou local, avec récupération via le mot de passe du compte
+   (jamais de réinitialisation qui effacerait les données). */
+async function hashPin(pin) {
+  const enc = new TextEncoder().encode(`budget-app-pin::${pin}`);
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+const getPinHash = () => localStorage.getItem('budget_pin_hash');
+const savePinHash = (hash) => localStorage.setItem('budget_pin_hash', hash);
+const clearPin = () => localStorage.removeItem('budget_pin_hash');
+async function verifyPin(pin) {
+  const hash = getPinHash();
+  return !!hash && (await hashPin(pin)) === hash;
 }
 
 /* ---------- FORMATAGE ---------- */
@@ -411,6 +489,7 @@ function exportData() {
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+  markExported();
   showToast('Export téléchargé ✓');
 }
 

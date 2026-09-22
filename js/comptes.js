@@ -61,6 +61,77 @@ function renderHistorique() {
   });
 }
 
+function renderObjectifs() {
+  const comptes = getComptes();
+  ['cb', 'especes', 'investissement'].forEach((compte) => {
+    const el = document.getElementById(`objectif-${compte}`);
+    if (!el) return;
+    const objectif = getObjectifCompte(compte);
+    const solde = comptes[compte].solde;
+
+    if (!objectif) {
+      el.innerHTML = `<button class="btn-expand objectif-link" data-set-objectif="${compte}">🎯 Définir un objectif</button>`;
+    } else {
+      const pct = objectif.montant > 0 ? Math.min(100, (solde / objectif.montant) * 100) : 0;
+      const atteint = solde >= objectif.montant;
+      const moisRestants = moisRestantsJusqua(objectif.echeance);
+      const manque = Math.max(0, objectif.montant - solde);
+      const parMois = manque / moisRestants;
+      el.innerHTML = `
+        <div class="objectif-block">
+          <div class="objectif-header">
+            <span>🎯 ${formatEuro(objectif.montant, 0)} d'ici ${formatMonthLabel(objectif.echeance)}</span>
+            <button class="btn-expand" data-set-objectif="${compte}" style="color:var(--text3); font-size:11px;">Modifier</button>
+          </div>
+          <div class="progress-bar"><div class="progress-fill ${atteint ? 'vert' : 'orange'}" style="width:${pct}%"></div></div>
+          <div class="objectif-sub">${atteint ? '🎉 Objectif atteint' : `Il te faut ${formatEuro(parMois, 0)}/mois`}</div>
+        </div>`;
+    }
+
+    el.querySelectorAll('[data-set-objectif]').forEach((btn) => {
+      btn.addEventListener('click', () => openObjectifModal(btn.dataset.setObjectif));
+    });
+  });
+}
+
+function openObjectifModal(compte) {
+  const existing = getObjectifCompte(compte);
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal-sheet">
+      <div class="modal-title">Objectif — ${COMPTE_LABELS[compte]}</div>
+      <input type="number" class="modal-input" id="objectif-montant" placeholder="Montant cible (€)" inputmode="decimal" step="0.01" min="0" value="${existing ? existing.montant : ''}">
+      <input type="month" class="modal-input" id="objectif-echeance" value="${existing ? existing.echeance : ''}">
+      <div class="modal-actions">
+        ${existing ? '<button class="btn btn-danger" data-act="remove">Supprimer</button>' : '<button class="btn btn-outline" data-act="cancel">Annuler</button>'}
+        <button class="btn btn-primary" data-act="ok">Enregistrer</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+  overlay.querySelector('[data-act="cancel"]')?.addEventListener('click', () => overlay.remove());
+  overlay.querySelector('[data-act="remove"]')?.addEventListener('click', () => {
+    saveObjectifCompte(compte, null);
+    overlay.remove();
+    showToast('Objectif supprimé');
+    renderObjectifs();
+  });
+  overlay.querySelector('[data-act="ok"]').addEventListener('click', () => {
+    const montant = parseFloat(document.getElementById('objectif-montant').value);
+    const echeance = document.getElementById('objectif-echeance').value;
+    if (!montant || montant <= 0 || !echeance) {
+      showToast('Formulaire incomplet', 'error');
+      return;
+    }
+    saveObjectifCompte(compte, { montant, echeance });
+    overlay.remove();
+    showToast('Objectif enregistré ✓');
+    renderObjectifs();
+  });
+}
+
 function renderComptesLineChart() {
   const ctx = document.getElementById('comptes-line-chart');
   if (!ctx || typeof Chart === 'undefined') return;
@@ -124,6 +195,7 @@ function renderComptesLineChart() {
 
 window.refreshComptes = function refreshComptes() {
   renderComptesCards();
+  renderObjectifs();
   renderHistorique();
   renderComptesLineChart();
 };

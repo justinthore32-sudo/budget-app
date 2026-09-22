@@ -37,6 +37,13 @@ function initLoginForm() {
   });
 }
 
+function renderPinMenuItems() {
+  const hasPin = !!getPinHash();
+  document.getElementById('user-menu-pin-set')?.classList.toggle('hidden', hasPin);
+  document.getElementById('user-menu-pin-change')?.classList.toggle('hidden', !hasPin);
+  document.getElementById('user-menu-pin-remove')?.classList.toggle('hidden', !hasPin);
+}
+
 function initUserMenu() {
   const btn = document.getElementById('user-menu-btn');
   const menu = document.getElementById('user-menu');
@@ -78,6 +85,29 @@ function initUserMenu() {
       }
     });
   }
+
+  renderPinMenuItems();
+  const handleSetPin = async () => {
+    menu.classList.remove('active');
+    const pin1 = await showTextPrompt('Nouveau code PIN (4 chiffres min.)', { type: 'password', placeholder: '••••', minLength: 4 });
+    if (!pin1) return;
+    const pin2 = await showTextPrompt('Confirme le code PIN', { type: 'password', placeholder: '••••', minLength: 4 });
+    if (!pin2) return;
+    if (pin1 !== pin2) { showToast('Les codes ne correspondent pas', 'error'); return; }
+    savePinHash(await hashPin(pin1));
+    showToast('Code PIN activé ✓');
+    renderPinMenuItems();
+  };
+  document.getElementById('user-menu-pin-set')?.addEventListener('click', handleSetPin);
+  document.getElementById('user-menu-pin-change')?.addEventListener('click', handleSetPin);
+  document.getElementById('user-menu-pin-remove')?.addEventListener('click', async () => {
+    menu.classList.remove('active');
+    const ok = await showConfirm('Désactiver le code PIN ?', { danger: true });
+    if (!ok) return;
+    clearPin();
+    showToast('Code PIN désactivé');
+    renderPinMenuItems();
+  });
 
   const exportBtn = document.getElementById('user-menu-export');
   if (exportBtn) exportBtn.addEventListener('click', () => { exportData(); menu.classList.remove('active'); });
